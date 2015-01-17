@@ -1,0 +1,12 @@
+*
+!.gitignore
+
+!*.nimble
+!*.docopt
+!*.md
+!README*
+!LICENSE
+!/src
+!/src/*.nim
+!/test
+!/test/*.nim
