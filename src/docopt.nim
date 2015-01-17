@@ -451,7 +451,7 @@ proc tokens(source: string,
 proc tokens_from_pattern(source: string): Tokens =
     var source = source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 ")
     var tokens = source.split_inc(re"\s+|(\S*<.*?>)").filter_it(it.len > 0)
-    tokens(source, new_exception(DocoptLanguageError, ""))
+    tokens(tokens, new_exception(DocoptLanguageError, ""))
 
 proc current(self: Tokens): string =
     if @self.len > 0:

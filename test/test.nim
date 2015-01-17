@@ -65,3 +65,4 @@ for each_line in "testcases.docopt".lines:
         stdout.write("\rTests passed: $#/$#\r" % [$passed, $total])
         args = nil
         expected = nil
+echo()
