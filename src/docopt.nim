@@ -29,7 +29,7 @@ proc val(v: int): Value = Value(kind: vkInt, int_v: v)
 proc val(v: bool): Value = Value(kind: vkBool, bool_v: v)
 proc val(v: seq[string]): Value = Value(kind: vkList, list_v: v)
 
-converter to_bool(v: Value): bool =
+converter to_bool*(v: Value): bool =
     case v.kind
       of vkNone: false
       of vkStr: v.str_v != nil and v.str_v.len > 0
@@ -185,7 +185,7 @@ method transform(pattern: Pattern): Either =
     ## Quirks: [-a] => (-a), (-a...) => (-a -a)
     var result: seq[seq[Pattern]] = @[]
     var groups: seq[seq[Pattern]] = @[@[pattern]]
-    while groups:
+    while groups.len > 0:
         var children = groups[0]
         groups.delete()
         var classes = children.map_it(string, it.class)
@@ -238,7 +238,7 @@ method str(self: LeafPattern): string =
     "$1($2, $3)" % [self.class, self.name.str, self.value.str]
 
 method flat(self: LeafPattern, types: openarray[string]): seq[Pattern] =
-    if not types or self.class in types: @[Pattern(self)] else: @[]
+    if types.len == 0 or self.class in types: @[Pattern(self)] else: @[]
 
 method single_match(self: LeafPattern,
                     left: seq[Pattern]): SingleMatchResult =
@@ -263,7 +263,7 @@ method match(self: LeafPattern, left: seq[Pattern],
           else:
             if match.value.kind == vkStr: val(@[match.value.str_v])
             else: match.value
-        if not same_name:
+        if same_name.len == 0:
             match.value = increment
             return (true, left2, collected & @[match])
         if increment.kind == vkInt:
@@ -425,7 +425,7 @@ proc tokens_from_pattern(source: string): Tokens =
     tokens(source, new_exception(DocoptLanguageError, ""))
 
 proc current(self: Tokens): string =
-    if @self:
+    if @self.len > 0:
         result = @self[0]
 
 proc move(self: Tokens): string =
@@ -441,7 +441,8 @@ proc parse_long(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
     var similar = options.filter_it(it.long == long)
     var o: Option
     if tokens.error of DocoptExit and similar.len == 0:  # if no exact match
-        similar = options.filter_it(it.long and it.long.starts_with(long))
+        similar = options.filter_it(it.long != nil and
+                                    it.long.starts_with(long))
     if similar.len > 1:  # might be simply specified ambiguously 2+ times?
         tokens.error.msg = "$# is not a unique prefix: $#?" % [
           long, similar.map_it(string, it.long).join(", ")]
