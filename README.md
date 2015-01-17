@@ -26,7 +26,7 @@ Options:
 import tables, strutils
 import docopt
 
-let args = docoptQuit(doc, version = "Naval Fate 2.0")
+let args = docopt(doc, version = "Naval Fate 2.0")
 
 if args["move"]:
   echo "Move ship $# to ($#, $#) at $# km/h" % [

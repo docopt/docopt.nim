@@ -673,65 +673,9 @@ proc extras(help: bool, version: string, options: seq[Pattern], doc: string) =
         quit()
 
 
-proc docopt*(doc: string, argv: seq[string] = nil, help = true,
-             version: string = nil, options_first = false
-            ): Table[string, Value] =
-    ## Parse `argv` based on command-line interface described in `doc`.
-    ##
-    ## `docopt` creates your command-line interface based on its
-    ## description that you pass as `doc`. Such description can contain
-    ## --options, <positional-argument>, commands, which could be
-    ## [optional], (required), (mutually | exclusive) or repeated...
-    ##
-    ## Parameters
-    ## ----------
-    ## doc : str
-    ##     Description of your command-line interface.
-    ## argv : seq[string], optional
-    ##     Argument vector to be parsed. sys.argv[1:] is used if not
-    ##     provided.
-    ## help : bool (default: true)
-    ##     Set to false to disable automatic help on -h or --help
-    ##     options.
-    ## version : string
-    ##     If passed, the string will be printed if --version is in
-    ##     `argv`.
-    ## options_first : bool (default: false)
-    ##     Set to true to require options precede positional arguments,
-    ##     i.e. to forbid options and positional arguments intermix.
-    ##
-    ## Returns
-    ## -------
-    ## args : Table[string, Value]
-    ##     A dictionary, where keys are names of command-line elements
-    ##     such as e.g. "--verbose" and "<path>", and values are the
-    ##     parsed values of those elements.
-    ##
-    ## Example
-    ## -------
-    ## import tables, docopt
-    ##
-    ## let doc = """
-    ## Usage:
-    ##     my_program tcp <host> <port> [--timeout=<seconds>]
-    ##     my_program serial <port> [--baud=<n>] [--timeout=<seconds>]
-    ##     my_program (-h | --help | --version)
-    ##
-    ## Options:
-    ##     -h, --help  Show this screen and exit.
-    ##     --baud=<n>  Baudrate [default: 9600]
-    ## """
-    ## let argv = ["tcp", "127.0.0.1", "80", "--timeout", "30"]
-    ## echo docopt(doc, argv)
-    ##
-    ## # {serial: false, <host>: "127.0.0.1", --help: false, --timeout: "30",
-    ## # --baud: "9600", --version: false, tcp: true, <port>: "80"}
-    ##
-    ## See also
-    ## --------
-    ## * For video introduction see http://docopt.org
-    ## * Full documentation: https://github.com/docopt/docopt#readme
-    
+proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
+                options_first = false): Table[string, Value] =
+
     var argv = (if argv.is_nil: command_line_params() else: argv)
     
     var usage_sections = parse_section("usage:", doc)
@@ -765,13 +709,72 @@ proc docopt*(doc: string, argv: seq[string] = nil, help = true,
     else:
         raise docopt_exit
 
-proc docopt_quit*(doc: string, argv: seq[string] = nil, help = true,
-                  version: string = nil, options_first = false
-                 ): Table[string, Value] =
-    ## Same as `docopt`, but, instead of raising DocoptExit,
-    ## quits and prints the usage message
+
+proc docopt*(doc: string, argv: seq[string] = nil, help = true,
+             version: string = nil, options_first = false, quit = true
+            ): Table[string, Value] =
+    ## Parse `argv` based on command-line interface described in `doc`.
+    ##
+    ## `docopt` creates your command-line interface based on its
+    ## description that you pass as `doc`. Such description can contain
+    ## --options, <positional-argument>, commands, which could be
+    ## [optional], (required), (mutually | exclusive) or repeated...
+    ##
+    ## Parameters
+    ## ----------
+    ## doc : str
+    ##     Description of your command-line interface.
+    ## argv : seq[string], optional
+    ##     Argument vector to be parsed. sys.argv[1:] is used if not
+    ##     provided.
+    ## help : bool (default: true)
+    ##     Set to false to disable automatic help on -h or --help
+    ##     options.
+    ## version : string
+    ##     If passed, the string will be printed if --version is in
+    ##     `argv`.
+    ## options_first : bool (default: false)
+    ##     Set to true to require options precede positional arguments,
+    ##     i.e. to forbid options and positional arguments intermix.
+    ## quit : bool (default: true)
+    ##     Set to false to let this function raise DocoptExit instead
+    ##     of printing usage and quitting the application.
+    ##
+    ## Returns
+    ## -------
+    ## args : Table[string, Value]
+    ##     A dictionary, where keys are names of command-line elements
+    ##     such as e.g. "--verbose" and "<path>", and values are the
+    ##     parsed values of those elements.
+    ##
+    ## Example
+    ## -------
+    ## import tables, docopt
+    ##
+    ## let doc = """
+    ## Usage:
+    ##     my_program tcp <host> <port> [--timeout=<seconds>]
+    ##     my_program serial <port> [--baud=<n>] [--timeout=<seconds>]
+    ##     my_program (-h | --help | --version)
+    ##
+    ## Options:
+    ##     -h, --help  Show this screen and exit.
+    ##     --baud=<n>  Baudrate [default: 9600]
+    ## """
+    ## let argv = ["tcp", "127.0.0.1", "80", "--timeout", "30"]
+    ## echo docopt(doc, argv)
+    ##
+    ## # {serial: false, <host>: "127.0.0.1", --help: false, --timeout: "30",
+    ## # --baud: "9600", --version: false, tcp: true, <port>: "80"}
+    ##
+    ## See also
+    ## --------
+    ## * For video introduction see http://docopt.org
+    ## * Full documentation: https://github.com/docopt/docopt#readme
+    if not quit:
+        return docopt_exc(doc, argv, help, version, options_first)
     try:
-        return docopt(doc, argv, help, version, options_first)
+        return docopt_exc(doc, argv, help, version, options_first)
     except DocoptExit:
         stderr.write((ref DocoptExit)(get_current_exception()).usage)
         quit()
