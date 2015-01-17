@@ -60,8 +60,9 @@ proc lstrip*(s: string, c: char): string =
 
 
 proc is_upper*(s: string): bool =
-    ## Is the string in uppercase?
-    s == s.to_upper()
+    ## Is the string in uppercase (and there is at least one cased character)?
+    let upper = s.to_upper()
+    s == upper and upper != s.to_lower()
 
 
 proc sub*[T](s: seq[T], a, b: int): seq[T] =
