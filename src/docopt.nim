@@ -64,7 +64,6 @@ proc len*(v: Value): int =
     if v.kind == vkInt: v.int_v
     else: v.list_v.len
 
-
 proc str(s: string): string =
     if s.is_nil: "nil"
     else: "\"" & s.replace("\"", "\\\"") & "\""
@@ -86,6 +85,9 @@ proc `$`*(v: Value): string =
       of vkStr: v.str_v
       else: v.str
 
+proc `==`*(a, b: Value): bool =
+    a.kind == b.kind and a.str == b.str
+
 
 type DocoptLanguageError* = object of Exception
     ## Error in construction of usage-message by developer.
@@ -105,14 +107,6 @@ type Pattern = ref object of RootObj
     children: seq[Pattern]
 gen_class(Pattern)
 
-
-method str(self: Pattern): string =
-    assert false; "Not implemented"
-
-proc `==`*(a, b: Value): bool =
-    a.kind == b.kind and $a == $b
-
-
 type LeafPattern = ref object of Pattern
     ## Leaf/terminal node of a pattern tree.
 gen_class(LeafPattern)
@@ -123,19 +117,22 @@ gen_class(BranchPattern)
 
 type Argument = ref object of LeafPattern
 gen_class(Argument)
+
 proc argument(name: string, value = val()): Argument =
-    result = Argument(m_name: name, value: value)
+    Argument(m_name: name, value: value)
 
 type Command = ref object of Argument
 gen_class(Command)
+
 proc command(name: string, value = val(false)): Command =
-    result = Command(m_name: name, value: value)
+    Command(m_name: name, value: value)
 
 type Option = ref object of LeafPattern
     short: string
     long: string
     argcount: int
 gen_class(Option)
+
 proc option(short, long: string = nil, argcount = 0,
             value = val(false)): Option =
     assert argcount in [0, 1]
@@ -146,36 +143,43 @@ proc option(short, long: string = nil, argcount = 0,
 
 type Required = ref object of BranchPattern
 gen_class(Required)
+
 proc required(children: openarray[Pattern]): Required =
-    result = Required(children: @children)
+    Required(children: @children)
 
 type Optional = ref object of BranchPattern
 gen_class(Optional)
+
 proc optional(children: openarray[Pattern]): Optional =
-    result = Optional(children: @children)
+    Optional(children: @children)
 
 type OptionsShortcut = ref object of Optional
     ## Marker/placeholder for [options] shortcut.
 gen_class(OptionsShortcut)
+
 proc options_shortcut(children: openarray[Pattern]): OptionsShortcut =
-    result = OptionsShortcut(children: @children)
+    OptionsShortcut(children: @children)
 
 type OneOrMore = ref object of BranchPattern
 gen_class(OneOrMore)
+
 proc one_or_more(children: openarray[Pattern]): OneOrMore =
-    result = OneOrMore(children: @children)
+    OneOrMore(children: @children)
 
 type Either = ref object of BranchPattern
 gen_class(Either)
+
 proc either(children: seq[Pattern]): Either =
-    result = Either(children: @children)
+    Either(children: @children)
 
 
-type MatchResult = tuple[matched: bool, left: seq[Pattern],
-                         collected: seq[Pattern]]
+type MatchResult = tuple[matched: bool; left, collected: seq[Pattern]]
 type SingleMatchResult = tuple[pos: int, match: Pattern]
 
 
+
+method str(self: Pattern): string =
+    assert false; "Not implemented"
 
 method name(self: Pattern): string =
     self.m_name
@@ -289,7 +293,7 @@ method match(self: LeafPattern, left: seq[Pattern],
         var increment =
           if self.value.kind == vkInt: val(1)
           else:
-            if match.value.kind == vkStr: val(@[match.value.str_v])
+            if match.value.kind == vkStr: val(@[$match.value])
             else: match.value
         if same_name.len == 0:
             match.value = increment
@@ -297,7 +301,7 @@ method match(self: LeafPattern, left: seq[Pattern],
         if increment.kind == vkInt:
             same_name[0].value.int_v += increment.int_v
         else:
-            same_name[0].value.list_v.add(increment.list_v)
+            same_name[0].value.list_v.add(@increment)
         return (true, left2, collected)
     return (true, left2, collected & @[match])
 
@@ -323,9 +327,9 @@ discard """
 proc argument_parse[T](
   constructor: proc(name: string, value: Value): T,
   source: Value): T =
-    var name = source.find_all(re.re(r"<\S*?>", {}))[0]
+    var name = source.find_all(re"<\S*?>")[0]
     var value: seq[string] = @[""]
-    if source.find(re.re(r"\[default: (.*)\]", {reIgnoreCase}), value) >= 0:
+    if source.find(re.re"(?i)\[default:\ (.*)\]", value) >= 0:
         return constructor(val(value[0]))
     else:
         return constructor(val())
@@ -335,8 +339,7 @@ proc argument_parse[T](
 method single_match(self: Command, left: seq[Pattern]): SingleMatchResult =
     for n, pattern in left:
         if pattern.class == "Argument":
-            if pattern.value.kind == vkStr and
-              pattern.value.str_v == self.name:
+            if pattern.value.kind == vkStr and $pattern.value == self.name:
                 return (n, command(self.name, val(true)))
             else:
                 break
@@ -344,7 +347,7 @@ method single_match(self: Command, left: seq[Pattern]): SingleMatchResult =
 
 
 proc option_parse[T](
-  constructor: proc(short, long: string, argcount: int, value: Value): T,
+  constructor: proc(short, long: string; argcount: int; value: Value): T,
   option_description: string): T =
     var short, long: string = nil
     var argcount = 0
@@ -361,8 +364,7 @@ proc option_parse[T](
             argcount = 1
     if argcount > 0:
         var matched = @[""]
-        if description.find(re.re(r"\[default: (.*)\]", {reIgnoreCase}),
-                            matched) >= 0:
+        if description.find(re.re"(?i)\[default:\ (.*)\]", matched) >= 0:
             value = val(matched[0])
         else:
             value = val()
@@ -447,9 +449,8 @@ proc tokens(source: string,
     tokens(source.split(), error)
 
 proc tokens_from_pattern(source: string): Tokens =
-    var source = source.replacef(re(r"([\[\]\(\)\|]|\.\.\.)", {}), r" $1 ")
-    var tokens = source.split_inc(re(r"\s+|(\S*<.*?>)", {}))
-                       .filter_it(it.len > 0)
+    var source = source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 ")
+    var tokens = source.split_inc(re"\s+|(\S*<.*?>)").filter_it(it.len > 0)
     tokens(source, new_exception(DocoptLanguageError, ""))
 
 proc current(self: Tokens): string =
@@ -642,7 +643,7 @@ proc parse_defaults(doc: string): seq[Option] =
     for ss in parse_section("options:", doc):
         # FIXME corner case "bla: options: --foo"
         var s = ss.partition(":").right  # get rid of "options:"
-        var split = ("\n" & s).split_inc(re(r"\n[ \t]*(-\S+?)", {}))
+        var split = ("\n" & s).split_inc(re"\n[\ \t]*(-\S+?)")
         for i in 1 .. split.len div 2:
             var s = split[i*2-1] & split[i*2]
             if s.starts_with("-"):
@@ -695,7 +696,8 @@ proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
     var pattern_options = pattern.flat(["Option"]).deduplicate()
     for options_shortcut in pattern.flat(["OptionsShortcut"]):
         var doc_options = parse_defaults(doc).deduplicate()
-        options_shortcut.children = doc_options.filter_it(it notin pattern_options).map_it(Pattern, Pattern(it))
+        options_shortcut.children = doc_options.filter_it(
+          it notin pattern_options).map_it(Pattern, Pattern(it))
     
     extras(help, version, argvt, doc)
     pattern.fix()
