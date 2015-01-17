@@ -1,5 +1,5 @@
 [docopt][] creates *beautiful* command-line interfaces
-------------------------------------------------------
+======================================================
 
 **This is a port of [docopt][docopt.py] to [Nim][]. Visit [docopt.org][docopt] for more information.**
 
@@ -28,9 +28,9 @@ import docopt
 
 let args = docoptQuit(doc, version = "Naval Fate 2.0")
 
-if args["move"].boolV:
+if args["move"]:
   echo "Move ship $# to ($#, $#) at $# km/h" % [
-    args["<name>"].listV[0], $args["<x>"], $args["<y>"], $args["--speed"]]
+    args["<name>"][0], $args["<x>"], $args["<y>"], $args["--speed"]]
 ```
 
 The option parser is generated based on the docstring above that is passed to `docopt` function. `docopt` parses the usage pattern (`"Usage: ..."`) and option descriptions (lines starting with dash "`-`") and ensures that the program invocation matches the usage pattern; it parses options, arguments and commands based on that. The basic idea is that *a good help message has all necessary information in it to make a parser*.
