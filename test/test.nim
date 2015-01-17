@@ -62,7 +62,7 @@ for each_line in "testcases.docopt".lines:
         total += 1
         if test(doc, args, expected):
             passed += 1
-        stdout.write("\rTests passed: $#/$#\r" % [$passed, $total])
+        stdout.write("\rTests passed: $#/$#\r".format(passed, total))
         args = nil
         expected = nil
 echo()

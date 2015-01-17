@@ -98,7 +98,7 @@ type DocoptExit* = object of Exception
 
 
 macro gen_class(typ): stmt =
-    parse_stmt("method class(self: $1): string = \"$1\"" % $typ)
+    parse_stmt("method class(self: $1): string = \"$1\"".format(typ))
 
 
 type Pattern = ref object of RootObj
@@ -267,7 +267,7 @@ method fix(self: Pattern) =
 
 
 method str(self: LeafPattern): string =
-    "$1($2, $3)" % [self.class, self.name.str, self.value.str]
+    "$#($#, $#)".format(self.class, self.name.str, self.value.str)
 
 method flat(self: LeafPattern, types: openarray[string]): seq[Pattern] =
     if types.len == 0 or self.class in types: @[Pattern(self)] else: @[]
@@ -307,7 +307,7 @@ method match(self: LeafPattern, left: seq[Pattern],
 
 
 method str(self: BranchPattern): string =
-    "$1($2)" % [self.class, self.children.str]
+    "$#($#)".format(self.class, self.children.str)
 
 method flat(self: BranchPattern, types: openarray[string]): seq[Pattern] =
     if self.class in types:
@@ -380,8 +380,8 @@ method name(self: Option): string =
     if self.long != nil: self.long else: self.short
 
 method str(self: Option): string =
-    "Option($1, $2, $3, $4)" % [self.short.str, self.long.str,
-                                $self.argcount, self.value.str]
+    "Option($#, $#, $#, $#)".format(self.short.str, self.long.str,
+                                    self.argcount, self.value.str)
 
 
 method match(self: Required, left: seq[Pattern],
@@ -444,10 +444,6 @@ proc tokens(source: seq[string],
   error: ref Exception = new_exception(DocoptExit, "")): Tokens =
     Tokens(tokens: source, error: error)
 
-proc tokens(source: string,
-  error: ref Exception = new_exception(DocoptExit, "")): Tokens =
-    tokens(source.split(), error)
-
 proc tokens_from_pattern(source: string): Tokens =
     var source = source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 ")
     var tokens = source.split_inc(re"\s+|(\S*<.*?>)").filter_it(it.len > 0)
@@ -473,8 +469,8 @@ proc parse_long(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
         similar = options.filter_it(it.long != nil and
                                     it.long.starts_with(long))
     if similar.len > 1:  # might be simply specified ambiguously 2+ times?
-        tokens.error.msg = "$# is not a unique prefix: $#?" % [
-          long, similar.map_it(string, it.long).join(", ")]
+        tokens.error.msg = "$# is not a unique prefix: $#?".format(
+          long, similar.map_it(string, it.long).join(", "))
         raise tokens.error
     elif similar.len < 1:
         var argcount = (if eq == "=": 1 else: 0)
@@ -488,12 +484,12 @@ proc parse_long(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
                    similar[0].argcount, similar[0].value)
         if o.argcount == 0:
             if value.kind != vkNone:
-                tokens.error.msg = "$# must not have an argument" % [o.long]
+                tokens.error.msg = "$# must not have an argument".format(o.long)
                 raise tokens.error
         else:
             if value.kind == vkNone:
                 if tokens.current in [nil, "--"]:
-                    tokens.error.msg = "$# requires argument" % [o.long]
+                    tokens.error.msg = "$# requires argument".format(o.long)
                     raise tokens.error
                 value = val(tokens.move())
         if tokens.error of DocoptExit:
@@ -513,8 +509,8 @@ proc parse_shorts(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
         var similar = options.filter_it(it.short == short)
         var o: Option
         if similar.len > 1:
-            tokens.error.msg = "$# is specified ambiguously $# times" % [
-              short, $similar.len]
+            tokens.error.msg = "$# is specified ambiguously $# times".format(
+              short, similar.len)
             raise tokens.error
         elif similar.len < 1:
             o = option(short, nil, 0)
@@ -528,7 +524,7 @@ proc parse_shorts(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
             if o.argcount != 0:
                 if left == "":
                     if tokens.current in [nil, "--"]:
-                        tokens.error.msg = "$# requires argument" % [short]
+                        tokens.error.msg = "$# requires argument".format(short)
                         raise tokens.error
                     value = val(tokens.move())
                 else:
@@ -545,7 +541,7 @@ proc parse_pattern(source: string, options: var seq[Option]): Required =
     var tokens = tokens_from_pattern(source)
     var result = parse_expr(tokens, options)
     if tokens.current != nil:
-        tokens.error.msg = "unexpected ending: '$#'" % [@tokens.join(" ")]
+        tokens.error.msg = "unexpected ending: '$#'".format(@tokens.join(" "))
         raise tokens.error
     required(result)
 
@@ -598,7 +594,7 @@ proc parse_atom(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
           else:
             assert false
         if tokens.move() != matching:
-            tokens.error.msg = "unmatched '$#'" % [token]
+            tokens.error.msg = "unmatched '$#'".format(token)
             raise tokens.error
         return @[result]
     elif token == "options":
@@ -763,7 +759,7 @@ proc docopt*(doc: string, argv: seq[string] = nil, help = true,
     ##     -h, --help  Show this screen and exit.
     ##     --baud=<n>  Baudrate [default: 9600]
     ## """
-    ## let argv = ["tcp", "127.0.0.1", "80", "--timeout", "30"]
+    ## let argv = @["tcp", "127.0.0.1", "80", "--timeout", "30"]
     ## echo docopt(doc, argv)
     ##
     ## # {serial: false, <host>: "127.0.0.1", --help: false, --timeout: "30",
