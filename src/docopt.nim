@@ -774,5 +774,5 @@ proc docopt*(doc: string, argv: seq[string] = nil, help = true,
     try:
         return docopt_exc(doc, argv, help, version, options_first)
     except DocoptExit:
-        stderr.write((ref DocoptExit)(get_current_exception()).usage)
+        stderr.writeln((ref DocoptExit)(get_current_exception()).usage)
         quit()
