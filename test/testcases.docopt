@@ -955,3 +955,4 @@ other options:
 """
 $ prog --baz --egg
 {"--foo": false, "--baz": true, "--bar": false, "--egg": true, "--spam": false}
+
