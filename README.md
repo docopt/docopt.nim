@@ -109,6 +109,8 @@ Note that this is not how the values are actually stored, because a `Table` can 
 
   Any value that can be supplied multiple times will be represented by a `seq[string]`, even if the user provides just one. To obtain this `seq`, use `@value`. To obtain its length, use `value.len` or `@value.len`. To obtain the n-th value (0-indexed), both `value[i]` and `@value[i]` will work. If you are sure there is exactly one value, `$value` is the same as `value[0]`.
 
+Note that you can use any kind of value in a boolean context and convert any value to `string`.
+
 Look [in the source code](src/docopt.nim#L30) to find out more about these conversions.
 
 
