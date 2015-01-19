@@ -49,17 +49,18 @@ proc len*(v: Value): int =
     if v.kind == vkInt: v.int_v
     else: v.list_v.len
 
+proc str(v: Value): string
+
 proc `$`*(v: Value): string =
-    ## Return the string of a vkStr Value
-    ## or the only item of a vkList value.
-    ## It is an error to use it on other kinds of Values.
-    case v.kind
-      of vkList:
-        if v.list_v.is_nil or v.list_v.len != 1:
-          raise new_exception(ValueError,
-                              "Must have exactly 1 item to convert to string")
+    ## Return the string of a vkStr Value,
+    ## or the item of a vkList Value, if there is exactly one,
+    ## or a string representation of any other kind of Value.
+    if v.kind == vkStr:
+        v.str_v
+    elif v.kind == vkList and
+      not v.list_v.is_nil and v.list_v.len == 1:
         v.list_v[0]
-      else: v.str_v
+    else: v.str
 
 proc `@`*(v: Value): seq[string] =
     ## Return the seq of a vkList Value.
