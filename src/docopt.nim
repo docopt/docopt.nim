@@ -9,43 +9,57 @@ import docopt_util
 
 type ValueKind* = enum
     vkNone, ## No value
-    vkStr,  ## A string
-    vkInt,  ## An integer
     vkBool, ## A boolean
+    vkInt,  ## An integer
+    vkStr,  ## A string
     vkList  ## A list of strings
 
 type Value* = object  ## docopt variant type
     case kind*: ValueKind
       of vkNone:
         nil
-      of vkStr:
-        str_v: string
-      of vkInt:
-        int_v: int
       of vkBool:
         bool_v: bool
+      of vkInt:
+        int_v: int
+      of vkStr:
+        str_v: string
       of vkList:
         list_v: seq[string]
 
-proc val(): Value = Value(kind: vkNone)
-proc val(v: string): Value = Value(kind: vkStr, str_v: v)
-proc val(v: int): Value = Value(kind: vkInt, int_v: v)
-proc val(v: bool): Value = Value(kind: vkBool, bool_v: v)
-proc val(v: seq[string]): Value = Value(kind: vkList, list_v: v)
 
 converter to_bool*(v: Value): bool =
     ## Convert a Value to bool, depending on its kind:
     ## - vkNone: false
-    ## - vkStr: true if string is not empty
-    ## - vkInt: true if integer is not zero
     ## - vkBool: boolean value itself
-    ## - vkList: sequence is not empty
+    ## - vkInt: true if integer is not zero
+    ## - vkStr: true if string is not empty
+    ## - vkList: true if sequence is not empty
     case v.kind
       of vkNone: false
-      of vkStr: v.str_v != nil and v.str_v.len > 0
-      of vkInt: v.int_v != 0
       of vkBool: v.bool_v
+      of vkInt: v.int_v != 0
+      of vkStr: v.str_v != nil and v.str_v.len > 0
       of vkList: not v.list_v.is_nil and v.list_v.len > 0
+
+proc len*(v: Value): int =
+    ## Return the integer of a vkInt Value
+    ## or the length of the seq of a vkList value.
+    ## It is an error to use it on other kinds of Values.
+    if v.kind == vkInt: v.int_v
+    else: v.list_v.len
+
+proc `$`*(v: Value): string =
+    ## Return the string of a vkStr Value
+    ## or the only item of a vkList value.
+    ## It is an error to use it on other kinds of Values.
+    case v.kind
+      of vkList:
+        if v.list_v.is_nil or v.list_v.len != 1:
+          raise new_exception(ValueError,
+                              "Must have exactly 1 item to convert to string")
+        v.list_v[0]
+      else: v.str_v
 
 proc `@`*(v: Value): seq[string] =
     ## Return the seq of a vkList Value.
@@ -57,12 +71,13 @@ proc `[]`*(v: Value, i: int): string =
     ## It is an error to use it on other kinds of Values.
     v.list_v[i]
 
-proc len*(v: Value): int =
-    ## Return the integer of a vkInt Value
-    ## or the length of the seq of a vkList value.
-    ## It is an error to use it on other kinds of Values.
-    if v.kind == vkInt: v.int_v
-    else: v.list_v.len
+
+proc val(): Value = Value(kind: vkNone)
+proc val(v: bool): Value = Value(kind: vkBool, bool_v: v)
+proc val(v: int): Value = Value(kind: vkInt, int_v: v)
+proc val(v: string): Value = Value(kind: vkStr, str_v: v)
+proc val(v: seq[string]): Value = Value(kind: vkList, list_v: v)
+
 
 proc str(s: string): string =
     if s.is_nil: "nil"
@@ -80,10 +95,6 @@ proc str(v: Value): string =
       of vkBool: $v.bool_v
       of vkList: v.list_v.str
 
-proc `$`*(v: Value): string =
-    case v.kind
-      of vkStr: v.str_v
-      else: v.str
 
 proc `==`*(a, b: Value): bool =
     a.kind == b.kind and a.str == b.str
@@ -767,8 +778,7 @@ proc docopt*(doc: string, argv: seq[string] = nil, help = true,
     ##
     ## See also
     ## --------
-    ## * For video introduction see http://docopt.org
-    ## * Full documentation: https://github.com/docopt/docopt#readme
+    ## Full documentation: http://docopt.org/
     if not quit:
         return docopt_exc(doc, argv, help, version, options_first)
     try:
