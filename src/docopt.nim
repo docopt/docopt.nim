@@ -4,7 +4,7 @@
 
 
 import re, sequtils, strutils, macros, os, tables
-import docopt_util
+import private/util
 
 
 type ValueKind* = enum
