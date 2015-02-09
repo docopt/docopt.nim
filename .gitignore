@@ -13,3 +13,4 @@
 !/src/private/*.nim
 !/test
 !/test/*.nim
+!/circle.yml
