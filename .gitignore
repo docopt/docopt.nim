@@ -4,6 +4,7 @@
 !*.nimble
 !*.docopt
 !*.md
+!nim.cfg
 !README*
 !LICENSE
 !/src

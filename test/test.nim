@@ -66,3 +66,5 @@ for each_line in "testcases.docopt".lines:
         args = nil
         expected = nil
 echo()
+
+quit(if passed == total: 0 else: 1)
