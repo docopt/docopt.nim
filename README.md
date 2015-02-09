@@ -1,7 +1,9 @@
 [docopt][docopt.org] creates *beautiful* command-line interfaces
-======================================================
+================================================================
 
 **This is a port of [docopt][docopt.py] to [Nim][]. Visit [docopt.org][] for more information.**
+
+[![Build Status](https://circleci.com/gh/docopt/docopt.nim.png?style=shield)](https://circleci.com/gh/docopt/docopt.nim)
 
 ```nim
 let doc = """
