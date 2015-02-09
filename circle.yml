@@ -25,5 +25,4 @@ dependencies:
 
 test:
   override:
-    - cd test
-    - nim c -r test
+    - cd test && nim c -r test
