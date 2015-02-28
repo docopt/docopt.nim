@@ -6,6 +6,8 @@
 import re, sequtils, strutils, macros, os, tables
 import private/util
 
+export tables
+
 
 type ValueKind* = enum
     vkNone, ## No value
