@@ -121,15 +121,13 @@ type Pattern = ref object of RootObj
     children: seq[Pattern]
 gen_class(Pattern)
 
-type LeafPattern = ref object of Pattern
-    ## Leaf/terminal node of a pattern tree.
-gen_class(LeafPattern)
+type ChildPattern = ref object of Pattern
+gen_class(ChildPattern)
 
-type BranchPattern = ref object of Pattern
-    ## Branch/inner node of a pattern tree.
-gen_class(BranchPattern)
+type ParentPattern = ref object of Pattern
+gen_class(ParentPattern)
 
-type Argument = ref object of LeafPattern
+type Argument = ref object of ChildPattern
 gen_class(Argument)
 
 proc argument(name: string, value = val()): Argument =
@@ -141,7 +139,7 @@ gen_class(Command)
 proc command(name: string, value = val(false)): Command =
     Command(m_name: name, value: value)
 
-type Option = ref object of LeafPattern
+type Option = ref object of ChildPattern
     short: string
     long: string
     argcount: int
@@ -155,32 +153,32 @@ proc option(short, long: string = nil, argcount = 0,
     if value.kind == vkBool and value.bool_v == false and argcount > 0:
         result.value = val()
 
-type Required = ref object of BranchPattern
+type Required = ref object of ParentPattern
 gen_class(Required)
 
 proc required(children: openarray[Pattern]): Required =
     Required(children: @children)
 
-type Optional = ref object of BranchPattern
+type Optional = ref object of ParentPattern
 gen_class(Optional)
 
 proc optional(children: openarray[Pattern]): Optional =
     Optional(children: @children)
 
-type OptionsShortcut = ref object of Optional
+type AnyOptions = ref object of Optional
     ## Marker/placeholder for [options] shortcut.
-gen_class(OptionsShortcut)
+gen_class(AnyOptions)
 
-proc options_shortcut(children: openarray[Pattern]): OptionsShortcut =
-    OptionsShortcut(children: @children)
+proc any_options(children: openarray[Pattern]): AnyOptions =
+    AnyOptions(children: @children)
 
-type OneOrMore = ref object of BranchPattern
+type OneOrMore = ref object of ParentPattern
 gen_class(OneOrMore)
 
 proc one_or_more(children: openarray[Pattern]): OneOrMore =
     OneOrMore(children: @children)
 
-type Either = ref object of BranchPattern
+type Either = ref object of ParentPattern
 gen_class(Either)
 
 proc either(children: seq[Pattern]): Either =
@@ -224,18 +222,17 @@ method fix_identities(self: Pattern, uniq: seq[Pattern]) =
 method fix_identities(self: Pattern) =
     self.fix_identities(self.flat([]).deduplicate())
 
-method transform(pattern: Pattern): Either =
-    ## Expand pattern into an (almost) equivalent one, but with single Either.
-    ##
-    ## Example: ((-a | -b) (-c | -d)) => (-a -c | -a -d | -b -c | -b -d)
-    ## Quirks: [-a] => (-a), (-a...) => (-a -a)
+method either(self: Pattern): Either =
+    ## Transform pattern into an equivalent, with only top-level Either.
+    # Currently the pattern will not be equivalent, but more "narrow",
+    # although good enough to reason about list arguments.
     var result: seq[seq[Pattern]] = @[]
-    var groups: seq[seq[Pattern]] = @[@[pattern]]
+    var groups: seq[seq[Pattern]] = @[@[self]]
     while groups.len > 0:
         var children = groups[0]
         groups.delete()
         var classes = children.map_it(string, it.class)
-        var parents = ["Required", "Optional", "OptionsShortcut",
+        var parents = ["Required", "Optional", "AnyOptions",
                        "Either", "OneOrMore"]
         if parents.any_it(it in classes):
             var child: Pattern
@@ -259,7 +256,7 @@ method transform(pattern: Pattern): Either =
 method fix_repeating_arguments(self: Pattern) =
     ## Fix elements that should accumulate/increment values.
     var either: seq[seq[Pattern]] = @[]
-    for child in transform(self).children:
+    for child in self.either.children:
         either.add(@(child.children))
     for cas in either:
         for e in cas:
@@ -280,17 +277,17 @@ method fix(self: Pattern) =
     self.fix_repeating_arguments()
 
 
-method str(self: LeafPattern): string =
+method str(self: ChildPattern): string =
     "$#($#, $#)".format(self.class, self.name.str, self.value.str)
 
-method flat(self: LeafPattern, types: openarray[string]): seq[Pattern] =
+method flat(self: ChildPattern, types: openarray[string]): seq[Pattern] =
     if types.len == 0 or self.class in types: @[Pattern(self)] else: @[]
 
-method single_match(self: LeafPattern,
+method single_match(self: ChildPattern,
                     left: seq[Pattern]): SingleMatchResult =
     assert false; nil
 
-method match(self: LeafPattern, left: seq[Pattern],
+method match(self: ChildPattern, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult =
     var m: SingleMatchResult
     try:
@@ -320,10 +317,10 @@ method match(self: LeafPattern, left: seq[Pattern],
     return (true, left2, collected & @[match])
 
 
-method str(self: BranchPattern): string =
+method str(self: ParentPattern): string =
     "$#($#)".format(self.class, self.children.str)
 
-method flat(self: BranchPattern, types: openarray[string]): seq[Pattern] =
+method flat(self: ParentPattern, types: openarray[string]): seq[Pattern] =
     if self.class in types:
         return @[Pattern(self)]
     result = new_seq[Pattern]()
@@ -448,31 +445,27 @@ method match(self: Either, left: seq[Pattern],
         return (false, left, collected)
 
 
-type Tokens = ref object
+type TokenStream = ref object
     tokens: seq[string]
     error: ref Exception
 
-proc `@`(tokens: Tokens): var seq[string] = tokens.tokens
+proc `@`(tokens: TokenStream): var seq[string] = tokens.tokens
 
-proc tokens(source: seq[string],
-  error: ref Exception = new_exception(DocoptExit, "")): Tokens =
-    Tokens(tokens: source, error: error)
+proc token_stream(source: seq[string], error: ref Exception): TokenStream =
+    TokenStream(tokens: source, error: error)
+proc token_stream(source: string, error: ref Exception): TokenStream =
+    token_stream(source.split(), error)
 
-proc tokens_from_pattern(source: string): Tokens =
-    var source = source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 ")
-    var tokens = source.split_inc(re"\s+|(\S*<.*?>)").filter_it(it.len > 0)
-    tokens(tokens, new_exception(DocoptLanguageError, ""))
-
-proc current(self: Tokens): string =
+proc current(self: TokenStream): string =
     if @self.len > 0:
         result = @self[0]
 
-proc move(self: Tokens): string =
+proc move(self: TokenStream): string =
     result = self.current
     @self.delete()
 
 
-proc parse_long(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
+proc parse_long(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## long ::= '--' chars [ ( ' ' | '=' ) chars ] ;
     var (long, eq, v) = tokens.move().partition("=")
     assert long.starts_with("--")
@@ -502,7 +495,7 @@ proc parse_long(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
                 raise tokens.error
         else:
             if value.kind == vkNone:
-                if tokens.current in [nil, "--"]:
+                if tokens.current == nil:
                     tokens.error.msg = "$# requires argument".format(o.long)
                     raise tokens.error
                 value = val(tokens.move())
@@ -511,7 +504,7 @@ proc parse_long(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
     @[Pattern(o)]
 
 
-proc parse_shorts(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
+proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## shorts ::= '-' ( chars )* [ [ ' ' ] chars ] ;
     var token = tokens.move()
     assert token.starts_with("-") and not token.starts_with("--")
@@ -537,7 +530,7 @@ proc parse_shorts(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
             var value = val()
             if o.argcount != 0:
                 if left == "":
-                    if tokens.current in [nil, "--"]:
+                    if tokens.current == nil:
                         tokens.error.msg = "$# requires argument".format(short)
                         raise tokens.error
                     value = val(tokens.move())
@@ -549,10 +542,13 @@ proc parse_shorts(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
         result.add(o)
 
 
-proc parse_expr(tokens: Tokens, options: var seq[Option]): seq[Pattern]
+proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
 
 proc parse_pattern(source: string, options: var seq[Option]): Required =
-    var tokens = tokens_from_pattern(source)
+    var tokens = token_stream(
+      source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 "),
+      new_exception(DocoptLanguageError, "")
+    )
     var result = parse_expr(tokens, options)
     if tokens.current != nil:
         tokens.error.msg = "unexpected ending: '$#'".format(@tokens.join(" "))
@@ -560,9 +556,9 @@ proc parse_pattern(source: string, options: var seq[Option]): Required =
     required(result)
 
 
-proc parse_seq(tokens: Tokens, options: var seq[Option]): seq[Pattern]
+proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
 
-proc parse_expr(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
+proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## expr ::= seq ( '|' seq )* ;
     var sequ = parse_seq(tokens, options)
     if tokens.current != "|":
@@ -576,9 +572,9 @@ proc parse_expr(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
 
 
 
-proc parse_atom(tokens: Tokens, options: var seq[Option]): seq[Pattern]
+proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
 
-proc parse_seq(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
+proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## seq ::= ( atom [ '...' ] )* ;
     result = @[]
     while tokens.current notin [nil, "]", ")", "|"]:
@@ -590,7 +586,7 @@ proc parse_seq(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
         result.add(atom)
 
 
-proc parse_atom(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
+proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## atom ::= '(' expr ')' | '[' expr ']' | 'options'
     ##       | long | shorts | argument | command ;
     var token = tokens.current
@@ -613,7 +609,7 @@ proc parse_atom(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
         return @[result]
     elif token == "options":
         discard tokens.move()
-        return @[Pattern(options_shortcut([]))]
+        return @[Pattern(any_options([]))]
     elif token.starts_with("--") and token != "--":
         return parse_long(tokens, options)
     elif token.starts_with("-") and token notin ["-", "--"]:
@@ -624,7 +620,7 @@ proc parse_atom(tokens: Tokens, options: var seq[Option]): seq[Pattern] =
         return @[Pattern(command(tokens.move()))]
 
 
-proc parse_argv(tokens: Tokens, options: var seq[Option],
+proc parse_argv(tokens: TokenStream, options: var seq[Option],
                 options_first = false): seq[Pattern] =
     ## Parse command-line argument vector.
     ##
@@ -646,29 +642,30 @@ proc parse_argv(tokens: Tokens, options: var seq[Option],
             result.add(argument(nil, val(tokens.move())))
 
 
-proc parse_section(name: string, source: string): seq[string]
-
 proc parse_defaults(doc: string): seq[Option] =
-    result = @[]
-    for ss in parse_section("options:", doc):
-        # FIXME corner case "bla: options: --foo"
-        var s = ss.partition(":").right  # get rid of "options:"
-        var split = ("\n" & s).split_inc(re"\n[\ \t]*(-\S+?)")
-        for i in 1 .. split.len div 2:
-            var s = split[i*2-1] & split[i*2]
-            if s.starts_with("-"):
-                result.add(option.option_parse(s))
+    var split = doc.split_inc(re"\n\ *(<\S+?>|-\S+?)")
+    result = new_seq[Option]()
+    for i in 1 .. split.len div 2:
+        var s = split[i*2-1] & split[i*2]
+        if s.starts_with("-"):
+            result.add(option.option_parse(s))
 
 
-proc parse_section(name: string, source: string): seq[string] =
-    let pattern = re(r"^([^\n]*" & name & r"[^\n]*\n?(?:[ \t].*?(?:\n|$))*)",
-                     {reIgnoreCase, reMultiLine})
-    @(source.find_all(pattern)).map_it(string, it.strip())
+proc printable_usage(doc: string): string =
+    var usage_split = doc.split_inc(re"([Uu][Ss][Aa][Gg][Ee]:)")
+    if usage_split.len < 3:
+        raise new_exception(DocoptLanguageError,
+            "\"usage:\" (case-insensitive) not found.")
+    if usage_split.len > 3:
+        raise new_exception(DocoptLanguageError,
+            "More than one \"usage:\" (case-insensitive).")
+    usage_split.delete()
+    usage_split.join().split_inc(re"\n\s*\n")[0].strip()
 
 
-proc formal_usage(section: string): string =
-    var section = section.partition(":").right  # drop "usage:"
-    var pu = section.split()
+proc formal_usage(printable_usage: string): string =
+    var pu = printable_usage.split()
+    pu.delete()
     var pu0 = pu[0]
     pu.delete()
     "( " & pu.map_it(string, if it == pu0: ") | (" else: it).join(" ") & " )"
@@ -688,25 +685,19 @@ proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
                 options_first = false): Table[string, Value] =
 
     var argv = (if argv.is_nil: command_line_params() else: argv)
-    
-    var usage_sections = parse_section("usage:", doc)
-    if usage_sections.len == 0:
-        raise new_exception(DocoptLanguageError,
-                            "\"usage:\" (case-insensitive) not found.")
-    if usage_sections.len > 1:
-        raise new_exception(DocoptLanguageError,
-                            "More than one \"usage:\" (case-insensitive).")
+
     var docopt_exit = new_exception(DocoptExit, "")
-    docopt_exit.usage = usage_sections[0]
+    docopt_exit.usage = printable_usage(doc)
     
     var options = parse_defaults(doc)
     var pattern = parse_pattern(formal_usage(docopt_exit.usage), options)
     
-    var argvt = parse_argv(tokens(argv), options, options_first)
+    var argvt = parse_argv(token_stream(argv, docopt_exit), options, 
+                           options_first)
     var pattern_options = pattern.flat(["Option"]).deduplicate()
-    for options_shortcut in pattern.flat(["OptionsShortcut"]):
+    for any_options in pattern.flat(["AnyOptions"]):
         var doc_options = parse_defaults(doc).deduplicate()
-        options_shortcut.children = doc_options.filter_it(
+        any_options.children = doc_options.filter_it(
           it notin pattern_options).map_it(Pattern, Pattern(it))
     
     extras(help, version, argvt, doc)
