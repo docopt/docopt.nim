@@ -8,15 +8,15 @@ import re, sequtils, strutils
 template any_it*(lst, pred: expr): expr =
     ## Does `pred` return true for any of the items of an iterable?
     var result = false
-    for it {.inject.} in lst.items:
+    for it {.inject.} in lst:
         if pred:
             result = true
             break
     result
 
 
-proc count*[T](s: seq[T], it: T): int =
-    ## How many times this item appears in a seq
+proc count*[T](s: openarray[T], it: T): int =
+    ## How many times this item appears in an array
     result = 0
     for x in s:
         if x == it:
@@ -44,19 +44,12 @@ proc split_inc*(s: string, sep: Regex): seq[string] =
 proc partition*(s, sep: string): tuple[left, sep, right: string] =
     ## "a+b".partition("+") == ("a", "+", "b")
     ## "a+b".partition("-") == ("a+b", "", "")
-    assert sep != nil and sep != "" 
+    assert sep != nil and sep != ""
     let pos = s.find(sep)
     if pos < 0:
         (s, "", "")
     else:
         (s.substr(0, <pos), s.substr(pos, <pos+sep.len), s.substr(pos+sep.len))
-
-
-proc lstrip*(s: string, c: char): string =
-    ## Remove leading `c` from `s`
-    result = s
-    while result.starts_with($c):
-        result = result.substr(1)
 
 
 proc is_upper*(s: string): bool =

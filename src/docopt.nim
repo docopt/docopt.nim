@@ -9,25 +9,25 @@ import private/util
 export tables
 
 
-type ValueKind* = enum
-    vkNone, ## No value
-    vkBool, ## A boolean
-    vkInt,  ## An integer
-    vkStr,  ## A string
-    vkList  ## A list of strings
-
-type Value* = object  ## docopt variant type
-    case kind*: ValueKind
-      of vkNone:
-        nil
-      of vkBool:
-        bool_v: bool
-      of vkInt:
-        int_v: int
-      of vkStr:
-        str_v: string
-      of vkList:
-        list_v: seq[string]
+type
+    ValueKind* = enum
+        vkNone, ## No value
+        vkBool, ## A boolean
+        vkInt,  ## An integer
+        vkStr,  ## A string
+        vkList  ## A list of strings
+    Value* = object  ## docopt variant type
+        case kind*: ValueKind
+          of vkNone:
+            nil
+          of vkBool:
+            bool_v: bool
+          of vkInt:
+            int_v: int
+          of vkStr:
+            str_v: string
+          of vkList:
+            list_v: seq[string]
 
 
 converter to_bool*(v: Value): bool =
@@ -38,11 +38,11 @@ converter to_bool*(v: Value): bool =
     ## - vkStr: true if string is not empty
     ## - vkList: true if sequence is not empty
     case v.kind
-      of vkNone: false
-      of vkBool: v.bool_v
-      of vkInt: v.int_v != 0
-      of vkStr: v.str_v != nil and v.str_v.len > 0
-      of vkList: not v.list_v.is_nil and v.list_v.len > 0
+        of vkNone: false
+        of vkBool: v.bool_v
+        of vkInt: v.int_v != 0
+        of vkStr: v.str_v != nil and v.str_v.len > 0
+        of vkList: not v.list_v.is_nil and v.list_v.len > 0
 
 proc len*(v: Value): int =
     ## Return the integer of a vkInt Value
@@ -50,19 +50,6 @@ proc len*(v: Value): int =
     ## It is an error to use it on other kinds of Values.
     if v.kind == vkInt: v.int_v
     else: v.list_v.len
-
-proc str(v: Value): string
-
-proc `$`*(v: Value): string =
-    ## Return the string of a vkStr Value,
-    ## or the item of a vkList Value, if there is exactly one,
-    ## or a string representation of any other kind of Value.
-    if v.kind == vkStr:
-        v.str_v
-    elif v.kind == vkList and
-      not v.list_v.is_nil and v.list_v.len == 1:
-        v.list_v[0]
-    else: v.str
 
 proc `@`*(v: Value): seq[string] =
     ## Return the seq of a vkList Value.
@@ -92,107 +79,114 @@ proc str[T](s: seq[T]): string =
 
 proc str(v: Value): string =
     case v.kind
-      of vkNone: "nil"
-      of vkStr: v.str_v.str
-      of vkInt: $v.int_v
-      of vkBool: $v.bool_v
-      of vkList: v.list_v.str
+        of vkNone: "nil"
+        of vkStr: v.str_v.str
+        of vkInt: $v.int_v
+        of vkBool: $v.bool_v
+        of vkList: v.list_v.str
 
+proc `$`*(v: Value): string =
+    ## Return the string of a vkStr Value,
+    ## or the item of a vkList Value, if there is exactly one,
+    ## or a string representation of any other kind of Value.
+    if v.kind == vkStr:
+        v.str_v
+    elif v.kind == vkList and
+      not v.list_v.is_nil and v.list_v.len == 1:
+        v.list_v[0]
+    else: v.str
 
 proc `==`*(a, b: Value): bool =
     a.kind == b.kind and a.str == b.str
 
 
-type DocoptLanguageError* = object of Exception
-    ## Error in construction of usage-message by developer.
-
-type DocoptExit* = object of Exception
-    ## Exit in case user invoked program with incorrect arguments.
-    usage*: string
-
-
-macro gen_class(typ): stmt =
-    parse_stmt("method class(self: $1): string = \"$1\"".format(typ))
+type
+    DocoptLanguageError* = object of Exception
+        ## Error in construction of usage-message by developer.
+    DocoptExit* = object of Exception
+        ## Exit in case user invoked program with incorrect arguments.
+        usage*: string
 
 
-type Pattern = ref object of RootObj
-    m_name: string
-    value: Value
-    children: seq[Pattern]
-gen_class(Pattern)
+macro gen_class(body: stmt): stmt {.immediate.} =
+    for typ in body[0].children:
+        body.add(parse_stmt(
+            """method class(self: $1): string = "$1"""".format(typ[0])
+        ))
+    body
 
-type ChildPattern = ref object of Pattern
-gen_class(ChildPattern)
 
-type ParentPattern = ref object of Pattern
-gen_class(ParentPattern)
+gen_class:
+  type
+    Pattern = ref object of RootObj
+        m_name: string
+        value: Value
+        children: seq[Pattern]
+    
+    ChildPattern = ref object of Pattern
+    
+    ParentPattern = ref object of Pattern
+    
+    Argument = ref object of ChildPattern
+    
+    Command = ref object of Argument
+    
+    Option = ref object of ChildPattern
+        short: string
+        long: string
+        argcount: int
+    
+    Required = ref object of ParentPattern
+    
+    Optional = ref object of ParentPattern
+    
+    AnyOptions = ref object of Optional
+        ## Marker/placeholder for [options] shortcut.
+    
+    OneOrMore = ref object of ParentPattern
+    
+    Either = ref object of ParentPattern
 
-type Argument = ref object of ChildPattern
-gen_class(Argument)
 
 proc argument(name: string, value = val()): Argument =
     Argument(m_name: name, value: value)
 
-type Command = ref object of Argument
-gen_class(Command)
-
 proc command(name: string, value = val(false)): Command =
     Command(m_name: name, value: value)
-
-type Option = ref object of ChildPattern
-    short: string
-    long: string
-    argcount: int
-gen_class(Option)
 
 proc option(short, long: string = nil, argcount = 0,
             value = val(false)): Option =
     assert argcount in [0, 1]
     result = Option(short: short, long: long,
                     argcount: argcount, value: value)
-    if value.kind == vkBool and value.bool_v == false and argcount > 0:
+    if value.kind == vkBool and not value and argcount > 0:
         result.value = val()
 
-type Required = ref object of ParentPattern
-gen_class(Required)
-
-proc required(children: openarray[Pattern]): Required =
+proc required(children: varargs[Pattern]): Required =
     Required(children: @children)
 
-type Optional = ref object of ParentPattern
-gen_class(Optional)
-
-proc optional(children: openarray[Pattern]): Optional =
+proc optional(children: varargs[Pattern]): Optional =
     Optional(children: @children)
 
-type AnyOptions = ref object of Optional
-    ## Marker/placeholder for [options] shortcut.
-gen_class(AnyOptions)
-
-proc any_options(children: openarray[Pattern]): AnyOptions =
+proc any_options(children: varargs[Pattern]): AnyOptions =
     AnyOptions(children: @children)
 
-type OneOrMore = ref object of ParentPattern
-gen_class(OneOrMore)
-
-proc one_or_more(children: openarray[Pattern]): OneOrMore =
+proc one_or_more(children: varargs[Pattern]): OneOrMore =
     OneOrMore(children: @children)
 
-type Either = ref object of ParentPattern
-gen_class(Either)
-
-proc either(children: seq[Pattern]): Either =
+proc either(children: varargs[Pattern]): Either =
     Either(children: @children)
 
 
-type MatchResult = tuple[matched: bool; left, collected: seq[Pattern]]
-type SingleMatchResult = tuple[pos: int, match: Pattern]
+type
+    MatchResult = tuple[matched: bool; left, collected: seq[Pattern]]
+    SingleMatchResult = tuple[pos: int, match: Pattern]
 
 
 {.warning[LockLevel]: off.}
 
 method str(self: Pattern): string =
-    assert false; "Not implemented"
+    assert false
 
 method name(self: Pattern): string =
     self.m_name
@@ -202,12 +196,12 @@ method `name=`(self: Pattern, name: string) =
 method `==`(self, other: Pattern): bool =
     self.str == other.str
 
-method flat(self: Pattern, types: openarray[string]): seq[Pattern] =
-    assert false; nil
+method flat(self: Pattern, types: varargs[string]): seq[Pattern] =
+    assert false
 
 method match(self: Pattern, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult =
-    assert false; nil
+    assert false
 
 method fix_identities(self: Pattern, uniq: seq[Pattern]) =
     ## Make pattern-tree tips point to same object if they are equal.
@@ -221,7 +215,7 @@ method fix_identities(self: Pattern, uniq: seq[Pattern]) =
             child.fix_identities(uniq)
 
 method fix_identities(self: Pattern) =
-    self.fix_identities(self.flat([]).deduplicate())
+    self.fix_identities(self.flat().deduplicate())
 
 method either(self: Pattern): Either =
     ## Transform pattern into an equivalent, with only top-level Either.
@@ -232,9 +226,8 @@ method either(self: Pattern): Either =
     while groups.len > 0:
         var children = groups[0]
         groups.delete()
-        var classes = children.map_it(string, it.class)
-        var parents = ["Required", "Optional", "AnyOptions",
-                       "Either", "OneOrMore"]
+        let classes = children.map_it(string, it.class)
+        const parents = "Required Optional AnyOptions Either OneOrMore".split()
         if parents.any_it(it in classes):
             var child: Pattern
             for i, c in children:
@@ -251,7 +244,7 @@ method either(self: Pattern): Either =
             else:
                 groups.add(child.children & children)
         else:
-            ret.add(children)
+            ret.add children
     either(ret.map_it(Pattern, required(it)))
 
 method fix_repeating_arguments(self: Pattern) =
@@ -268,7 +261,7 @@ method fix_repeating_arguments(self: Pattern) =
                 if e.value.kind == vkNone:
                     e.value = val(@[])
                 elif e.value.kind != vkList:
-                    e.value = val(e.value.str_v.split())
+                    e.value = val(($e.value).split())
             if e.class == "Command" or
               e.class == "Option" and Option(e).argcount == 0:
                 e.value = val(0)
@@ -281,12 +274,12 @@ method fix(self: Pattern) =
 method str(self: ChildPattern): string =
     "$#($#, $#)".format(self.class, self.name.str, self.value.str)
 
-method flat(self: ChildPattern, types: openarray[string]): seq[Pattern] =
+method flat(self: ChildPattern, types: varargs[string]): seq[Pattern] =
     if types.len == 0 or self.class in types: @[Pattern(self)] else: @[]
 
 method single_match(self: ChildPattern,
                     left: seq[Pattern]): SingleMatchResult =
-    assert false; nil
+    assert false
 
 method match(self: ChildPattern, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult =
@@ -296,13 +289,13 @@ method match(self: ChildPattern, left: seq[Pattern],
     except ValueError:
         return (false, left, collected)
     var (pos, match) = m
-    var left2 = left.sub(0, pos) & left.sub(pos+1, left.len)
+    let left2 = left.sub(0, pos) & left.sub(pos+1, left.len)
     var same_name: seq[Pattern] = @[]
     for a in collected:
         if a.name == self.name:
-            same_name.add(a)
+            same_name.add a
     if self.value.kind in [vkInt, vkList]:
-        var increment =
+        let increment =
           if self.value.kind == vkInt: val(1)
           else:
             if match.value.kind == vkStr: val(@[$match.value])
@@ -321,12 +314,12 @@ method match(self: ChildPattern, left: seq[Pattern],
 method str(self: ParentPattern): string =
     "$#($#)".format(self.class, self.children.str)
 
-method flat(self: ParentPattern, types: openarray[string]): seq[Pattern] =
+method flat(self: ParentPattern, types: varargs[string]): seq[Pattern] =
     if self.class in types:
         return @[Pattern(self)]
-    result = new_seq[Pattern]()
+    result = @[]
     for child in self.children:
-        result.add(child.flat(types))
+        result.add child.flat(types)
 
 
 method single_match(self: Argument, left: seq[Pattern]): SingleMatchResult =
@@ -334,19 +327,6 @@ method single_match(self: Argument, left: seq[Pattern]): SingleMatchResult =
         if pattern.class == "Argument":
             return (n, argument(self.name, pattern.value))
     raise new_exception(ValueError, "Not found")
-
-discard """
-proc argument_parse[T](
-  constructor: proc(name: string, value: Value): T,
-  source: Value): T =
-    var name = source.find_all(re"<\S*?>")[0]
-    var value: seq[string] = @[""]
-    if source.find(re.re"(?i)\[default:\ (.*)\]", value) >= 0:
-        return constructor(val(value[0]))
-    else:
-        return constructor(val())
-"""
-
 
 method single_match(self: Command, left: seq[Pattern]): SingleMatchResult =
     for n, pattern in left:
@@ -368,9 +348,9 @@ proc option_parse[T](
     discard p
     options = options.replace(",", " ").replace("=", " ")
     for s in options.split():
-        if s.starts_with("--"):
+        if s.starts_with "--":
             long = s
-        elif s.starts_with("-"):
+        elif s.starts_with "-":
             short = s
         else:
             argcount = 1
@@ -468,22 +448,22 @@ proc move(self: TokenStream): string =
 
 proc parse_long(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## long ::= '--' chars [ ( ' ' | '=' ) chars ] ;
-    var (long, eq, v) = tokens.move().partition("=")
-    assert long.starts_with("--")
+    let (long, eq, v) = tokens.move().partition("=")
+    assert long.starts_with "--"
     var value = (if eq == "" and v == "": val() else: val(v))
     var similar = options.filter_it(it.long == long)
     var o: Option
     if tokens.error of DocoptExit and similar.len == 0:  # if no exact match
         similar = options.filter_it(it.long != nil and
-                                    it.long.starts_with(long))
+                                    it.long.starts_with long)
     if similar.len > 1:  # might be simply specified ambiguously 2+ times?
         tokens.error.msg = "$# is not a unique prefix: $#?".format(
           long, similar.map_it(string, it.long).join(", "))
         raise tokens.error
     elif similar.len < 1:
-        var argcount = (if eq == "=": 1 else: 0)
+        let argcount = (if eq == "=": 1 else: 0)
         o = option(nil, long, argcount)
-        options.add(o)
+        options.add o
         if tokens.error of DocoptExit:
             o = option(nil, long, argcount,
                        if argcount > 0: value else: val(true))
@@ -507,14 +487,14 @@ proc parse_long(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
 
 proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## shorts ::= '-' ( chars )* [ [ ' ' ] chars ] ;
-    var token = tokens.move()
+    let token = tokens.move()
     assert token.starts_with("-") and not token.starts_with("--")
-    var left = token.lstrip('-')
+    var left = token.substr(1)
     result = @[]
     while left != "":
-        var short = "-" & left[0]
+        let short = "-" & left[0]
         left = left.substr(1)
-        var similar = options.filter_it(it.short == short)
+        let similar = options.filter_it(it.short == short)
         var o: Option
         if similar.len > 1:
             tokens.error.msg = "$# is specified ambiguously $# times".format(
@@ -522,7 +502,7 @@ proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
             raise tokens.error
         elif similar.len < 1:
             o = option(short, nil, 0)
-            options.add(o)
+            options.add o
             if tokens.error of DocoptExit:
                 o = option(short, nil, 0, val(true))
         else:  # why copying is necessary here?
@@ -540,7 +520,7 @@ proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
                     left = ""
             if tokens.error of DocoptExit:
                 o.value = (if value.kind != vkNone: value else: val(true))
-        result.add(o)
+        result.add o
 
 
 proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
@@ -550,7 +530,7 @@ proc parse_pattern(source: string, options: var seq[Option]): Required =
       source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 "),
       new_exception(DocoptLanguageError, "")
     )
-    var ret = parse_expr(tokens, options)
+    let ret = parse_expr(tokens, options)
     if tokens.current != nil:
         tokens.error.msg = "unexpected ending: '$#'".format(@tokens.join(" "))
         raise tokens.error
@@ -584,7 +564,7 @@ proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
             let oom = one_or_more(atom)
             atom = @[Pattern(oom)]
             discard tokens.move()
-        result.add(atom)
+        result.add atom
 
 
 proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
@@ -607,18 +587,18 @@ proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
         if tokens.move() != matching:
             tokens.error.msg = "unmatched '$#'".format(token)
             raise tokens.error
-        return @[ret]
+        @[ret]
     elif token == "options":
         discard tokens.move()
-        return @[Pattern(any_options([]))]
-    elif token.starts_with("--") and token != "--":
-        return parse_long(tokens, options)
-    elif token.starts_with("-") and token notin ["-", "--"]:
-        return parse_shorts(tokens, options)
-    elif token.starts_with("<") and token.ends_with(">") or token.is_upper():
-        return @[Pattern(argument(tokens.move()))]
+        @[Pattern(any_options())]
+    elif (token.starts_with "--") and token != "--":
+        parse_long(tokens, options)
+    elif (token.starts_with "-") and token notin ["-", "--"]:
+        parse_shorts(tokens, options)
+    elif (token.starts_with "<") and (token.ends_with ">") or token.is_upper():
+        @[Pattern(argument(tokens.move()))]
     else:
-        return @[Pattern(command(tokens.move()))]
+        @[Pattern(command(tokens.move()))]
 
 
 proc parse_argv(tokens: TokenStream, options: var seq[Option],
@@ -633,33 +613,33 @@ proc parse_argv(tokens: TokenStream, options: var seq[Option],
     while tokens.current != nil:
         if tokens.current == "--":
             return result & @tokens.map_it(Pattern, argument(nil, val(it)))
-        elif tokens.current.starts_with("--"):
-            result.add(parse_long(tokens, options))
-        elif tokens.current.starts_with("-") and tokens.current != "-":
-            result.add(parse_shorts(tokens, options))
+        elif tokens.current.starts_with "--":
+            result.add parse_long(tokens, options)
+        elif (tokens.current.starts_with "-") and tokens.current != "-":
+            result.add parse_shorts(tokens, options)
         elif options_first:
             return result & @tokens.map_it(Pattern, argument(nil, val(it)))
         else:
-            result.add(argument(nil, val(tokens.move())))
+            result.add argument(nil, val(tokens.move()))
 
 
 proc parse_defaults(doc: string): seq[Option] =
     var split = doc.split_inc(re"\n\ *(<\S+?>|-\S+?)")
-    result = new_seq[Option]()
+    result = @[]
     for i in 1 .. split.len div 2:
         var s = split[i*2-1] & split[i*2]
-        if s.starts_with("-"):
-            result.add(option.option_parse(s))
+        if s.starts_with "-":
+            result.add option.option_parse(s)
 
 
 proc printable_usage(doc: string): string =
     var usage_split = doc.split_inc(re"([Uu][Ss][Aa][Gg][Ee]:)")
     if usage_split.len < 3:
         raise new_exception(DocoptLanguageError,
-            "\"usage:\" (case-insensitive) not found.")
+            """"usage:" (case-insensitive) not found.""")
     if usage_split.len > 3:
         raise new_exception(DocoptLanguageError,
-            "More than one \"usage:\" (case-insensitive).")
+            """More than one "usage:" (case-insensitive).""")
     usage_split.delete()
     usage_split.join().split_inc(re"\n\s*\n")[0].strip()
 
@@ -695,8 +675,8 @@ proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
     
     var argvt = parse_argv(token_stream(argv, docopt_exit), options, 
                            options_first)
-    var pattern_options = pattern.flat(["Option"]).deduplicate()
-    for any_options in pattern.flat(["AnyOptions"]):
+    var pattern_options = pattern.flat("Option").deduplicate()
+    for any_options in pattern.flat("AnyOptions"):
         var doc_options = parse_defaults(doc).deduplicate()
         any_options.children = doc_options.filter_it(
           it notin pattern_options).map_it(Pattern, Pattern(it))
@@ -706,7 +686,7 @@ proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
     var (matched, left, collected) = pattern.match(argvt)
     if matched and left.len == 0:  # better error message if left?
         result = init_table[string, Value]()
-        for a in pattern.flat([]):
+        for a in pattern.flat():
             result[a.name] = a.value
         for a in collected:
             result[a.name] = a.value
