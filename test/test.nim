@@ -47,7 +47,7 @@ for each_line in "testcases.docopt".lines:
     if in_doc:
         doc &= line & "\n"
         if line.ends_with("\"\"\""):
-            doc = doc[0 .. -5]
+            doc = doc[0 .. doc.len-5]
             in_doc = false
     elif line.starts_with("$ prog"):
         assert args == nil and expected == nil

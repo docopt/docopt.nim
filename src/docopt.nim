@@ -189,6 +189,7 @@ type MatchResult = tuple[matched: bool; left, collected: seq[Pattern]]
 type SingleMatchResult = tuple[pos: int, match: Pattern]
 
 
+{.warning[LockLevel]: off.}
 
 method str(self: Pattern): string =
     assert false; "Not implemented"
@@ -226,8 +227,8 @@ method either(self: Pattern): Either =
     ## Transform pattern into an equivalent, with only top-level Either.
     # Currently the pattern will not be equivalent, but more "narrow",
     # although good enough to reason about list arguments.
-    var result: seq[seq[Pattern]] = @[]
-    var groups: seq[seq[Pattern]] = @[@[self]]
+    var ret: seq[seq[Pattern]] = @[]
+    var groups = @[@[self]]
     while groups.len > 0:
         var children = groups[0]
         groups.delete()
@@ -250,8 +251,8 @@ method either(self: Pattern): Either =
             else:
                 groups.add(child.children & children)
         else:
-            result.add(children)
-    either(result.map_it(Pattern, required(it)))
+            ret.add(children)
+    either(ret.map_it(Pattern, required(it)))
 
 method fix_repeating_arguments(self: Pattern) =
     ## Fix elements that should accumulate/increment values.
@@ -549,11 +550,11 @@ proc parse_pattern(source: string, options: var seq[Option]): Required =
       source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 "),
       new_exception(DocoptLanguageError, "")
     )
-    var result = parse_expr(tokens, options)
+    var ret = parse_expr(tokens, options)
     if tokens.current != nil:
         tokens.error.msg = "unexpected ending: '$#'".format(@tokens.join(" "))
         raise tokens.error
-    required(result)
+    required(ret)
 
 
 proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
@@ -593,20 +594,20 @@ proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     if token in ["(", "["]:
         discard tokens.move()
         var matching: string
-        var result: Pattern
+        var ret: Pattern
         case token
           of "(":
             matching = ")"
-            result = required(parse_expr(tokens, options))
+            ret = required(parse_expr(tokens, options))
           of "[":
             matching = "]"
-            result = optional(parse_expr(tokens, options))
+            ret = optional(parse_expr(tokens, options))
           else:
             assert false
         if tokens.move() != matching:
             tokens.error.msg = "unmatched '$#'".format(token)
             raise tokens.error
-        return @[result]
+        return @[ret]
     elif token == "options":
         discard tokens.move()
         return @[Pattern(any_options([]))]
