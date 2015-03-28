@@ -25,4 +25,4 @@ dependencies:
 
 test:
   override:
-    - cd test && nim c --path:../src -r test
+    - nim compile --verbosity:0 --run test/test

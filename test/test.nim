@@ -38,7 +38,8 @@ var doc, args, expected: string = nil
 var in_doc = false
 var total, passed = 0
 
-for each_line in "testcases.docopt".lines:
+const tests = static_read("testcases.docopt")
+for each_line in (tests & "\n\n").split_lines():
     var line = each_line.partition("#").left
     if not in_doc and line.starts_with("r\"\"\""):
         in_doc = true
