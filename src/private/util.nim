@@ -2,7 +2,7 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import re, sequtils, strutils
+import re, sequtils, strutils, macros
 
 
 template any_it*(lst, pred: expr): expr =
@@ -62,3 +62,13 @@ proc sub*[T](s: seq[T], a, b: int): seq[T] =
     ## Items from `a` to `b` non-inclusive
     if a < b: s[a .. <b]
     else: @[]
+
+
+macro gen_class*(body: stmt): stmt {.immediate.} =
+    ## When applied to a type block, this will generate methods
+    ## that return each type's name as a string.
+    for typ in body[0].children:
+        body.add(parse_stmt(
+            """method class(self: $1): string = "$1"""".format(typ[0])
+        ))
+    body
