@@ -1,6 +1,7 @@
 *
 !.gitignore
-
+!*.nim
+/*.nim
 !*.nimble
 !*.docopt
 !*.md
@@ -8,9 +9,7 @@
 !README*
 !LICENSE
 !/src
-!/src/*.nim
 !/src/private
-!/src/private/*.nim
 !/test
-!/test/*.nim
+!/examples
 !/circle.yml

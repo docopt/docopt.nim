@@ -25,14 +25,17 @@ Options:
   --drifting    Drifting mine.
 """
 
-import tables, strutils
+import strutils
 import docopt
 
 let args = docopt(doc, version = "Naval Fate 2.0")
 
 if args["move"]:
-  echo "Move ship $# to ($#, $#) at $# kn".format(
+  echo "Moving ship $# to ($#, $#) at $# kn".format(
     args["<name>"], args["<x>"], args["<y>"], args["--speed"])
+  ships[$args["<name>"]].move(
+    parseFloat($args["<x>"]), parseFloat($args["<y>"]),
+    speed = parseFloat($args["--speed"]))
 ```
 
 The option parser is generated based on the docstring above that is passed to `docopt` function. `docopt` parses the usage pattern (`"Usage: ..."`) and option descriptions (lines starting with dash "`-`") and ensures that the program invocation matches the usage pattern; it parses options, arguments and commands based on that. The basic idea is that *a good help message has all necessary information in it to make a parser*.
@@ -116,6 +119,14 @@ Note that you can use any kind of value in a boolean context and convert any val
 Look [in the source code](src/private/value.nim) to find out more about these conversions.
 
 
+Examples
+--------
+
+See [examples](examples) folder.
+
+For more examples of docopt language see [docopt.py examples][].
+
+
 Installation
 ------------
 
@@ -124,16 +135,7 @@ Installation
 This library has no dependencies outside the standard library. An impure [`re`][re] library is used.
 
 
-Testing
--------
 
-See [test](test) folder.
-
-
-Examples
---------
-
-See [docopt.py examples][]
 
 
 [docopt.org]: http://docopt.org/
