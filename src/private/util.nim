@@ -2,7 +2,7 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import re, sequtils, strutils, macros
+import sequtils, strutils, macros
 
 
 template any_it*(lst, pred: expr): expr =
@@ -21,24 +21,6 @@ proc count*[T](s: openarray[T], it: T): int =
     for x in s:
         if x == it:
             result += 1
-
-
-iterator split_inc*(s: string, sep: Regex): string =
-    ## Like split, but include matches in parentheses, similar to Python
-    var start = 0
-    while true:
-        var matches: seq[tuple[first, last: int]] = new_seq_with(20, (-1, -1))
-        var (first, last) = s.find_bounds(sep, matches, start)
-        if first < 0: break
-        yield s.substr(start, <first)
-        for a, b in matches.items:
-            if a < 0: break
-            yield s.substr(a, b)
-        start = last+(if first > last: 2 else: 1)
-    yield s.substr(start, s.high)
-
-proc split_inc*(s: string, sep: Regex): seq[string] =
-    accumulate_result(split_inc(s, sep))
 
 
 proc partition*(s, sep: string): tuple[left, sep, right: string] =

@@ -3,7 +3,7 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import re, sequtils, os, tables
+import sequtils, os, tables
 import private/util
 
 export tables
@@ -258,11 +258,16 @@ proc option_parse[T](
         else:
             argcount = 1
     if argcount > 0:
-        var matched = @[""]
-        if description.find(re.re"(?i)\[default:\ (.*)\]", matched) >= 0:
-            value = val(matched[0])
-        else:
-            value = val()
+        value = val()
+        const s1 = "[default: "
+        const s2 = "]"
+        let desc_l = description.to_lower()
+        var m1 = desc_l.find(s1)
+        if m1 >= 0:
+            m1 += s1.len
+            let m2 = desc_l.find(s2, m1)
+            if m2 >= 0:
+                value = val(description.substr(m1, <m2))
     constructor(short, long, argcount, value)
 
 method single_match(self: Option, left: seq[Pattern]): SingleMatchResult =
@@ -429,10 +434,10 @@ proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
 proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
 
 proc parse_pattern(source: string, options: var seq[Option]): Required =
-    var tokens = token_stream(
-      source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 "),
-      new_exception(DocoptLanguageError, "")
-    )
+    var source = source
+    for s in ["[", "]", "(", ")", "|", "..."]:
+        source = source.replace(s, " " & s & " ")
+    var tokens = token_stream(source, new_exception(DocoptLanguageError, ""))
     let ret = parse_expr(tokens, options)
     if tokens.current != nil:
         tokens.error.msg = "unexpected ending: '$#'".format(@tokens.join(" "))
@@ -527,7 +532,42 @@ proc parse_argv(tokens: TokenStream, options: var seq[Option],
 
 
 proc parse_defaults(doc: string): seq[Option] =
-    var split = doc.split_inc(re"\n\ *(<\S+?>|-\S+?)")
+    var split = new_seq[string]()
+    var prev = 0
+    var m2 = 0
+    while true:
+        var m1 = doc.find('\l', m2)
+        let matchstart = m1
+        if m1 < 0:
+            break
+        inc m1
+        while doc[m1] == ' ':
+            inc m1
+        if doc[m1] == '<':
+            m2 = m1 + 1
+            while m2 < doc.len and doc[m2] notin Whitespace:
+                if doc[m2] == '>':
+                    break
+                inc m2
+            if doc[m2] != '>' or m2-m1 <= 2:
+                m2 = matchstart + 1
+                continue
+            inc m2
+        elif doc[m1] == '-':
+            m2 = m1 + 1
+            while m2 < doc.len and doc[m2] notin Whitespace:
+                inc m2
+            if m2-m1 <= 1:
+                m2 = matchstart + 1
+                continue
+        else:
+            m2 = matchstart + 1
+            continue
+        split.add doc.substr(prev, <matchstart)
+        split.add doc.substr(m1, <m2)
+        prev = m2
+    split.add doc.substr(prev, doc.high)
+    
     result = @[]
     for i in 1 .. split.len div 2:
         var s = split[i*2-1] & split[i*2]
@@ -536,15 +576,25 @@ proc parse_defaults(doc: string): seq[Option] =
 
 
 proc printable_usage(doc: string): string =
-    var usage_split = doc.split_inc(re"([Uu][Ss][Aa][Gg][Ee]:)")
-    if usage_split.len < 3:
+    const s = "usage:"
+    let doc_l = doc.to_lower()
+    let m = doc_l.find(s)
+    if m < 0:
         raise new_exception(DocoptLanguageError,
             """"usage:" (case-insensitive) not found.""")
-    if usage_split.len > 3:
+    if doc_l.find(s, m + s.len) >= 0:
         raise new_exception(DocoptLanguageError,
             """More than one "usage:" (case-insensitive).""")
-    usage_split.delete()
-    usage_split.join().split_inc(re"\n\s*\n")[0].strip()
+    var doc = doc.substr(m)
+    var m1 = doc.find('\l')
+    while m1 >= 0:
+        inc m1
+        while doc[m1] in Whitespace:
+            if doc[m1] == '\l':
+                return doc.substr(0, m1).strip()
+            inc m1
+        m1 = doc.find('\l', m1)
+    return doc.strip()
 
 
 proc formal_usage(printable_usage: string): string =
