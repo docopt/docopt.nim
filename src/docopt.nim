@@ -283,8 +283,7 @@ method match(self: Required, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult =
     result = (true, left, collected)
     for pattern in self.children:
-        let t = pattern.match(result.left, result.collected)
-        result = t
+        result = pattern.match(result.left, result.collected)
         if not result.matched:
             return (false, left, collected)
 
@@ -293,8 +292,7 @@ method match(self: Optional, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult =
     result = (true, left, collected)
     for pattern in self.children:
-        let t = pattern.match(result.left, result.collected)
-        result = t
+        result = pattern.match(result.left, result.collected)
     result.matched = true
 
 
@@ -306,8 +304,7 @@ method match(self: OneOrMore, left: seq[Pattern],
     var times = 0
     while result.matched:
         # could it be that something didn't match but changed l or c?
-        let t = self.children[0].match(result.left, result.collected)
-        result = t
+        result = self.children[0].match(result.left, result.collected)
         if result.matched:
             times += 1
         if l2 == result.left:
