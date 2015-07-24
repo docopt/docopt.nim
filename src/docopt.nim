@@ -128,7 +128,7 @@ method either(self: Pattern): Either =
     var groups = @[@[self]]
     while groups.len > 0:
         var children = groups[0]
-        groups.delete()
+        groups.delete(0)
         let classes = children.map_it(string, it.class)
         const parents = "Required Optional AnyOptions Either OneOrMore".split()
         if parents.any_it(it in classes):
@@ -346,7 +346,7 @@ proc current(self: TokenStream): string =
 
 proc move(self: TokenStream): string =
     result = self.current
-    @self.delete()
+    @self.delete(0)
 
 
 proc parse_long(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
@@ -543,15 +543,15 @@ proc printable_usage(doc: string): string =
     if usage_split.len > 3:
         raise new_exception(DocoptLanguageError,
             """More than one "usage:" (case-insensitive).""")
-    usage_split.delete()
+    usage_split.delete(0)
     usage_split.join().split_inc(re"\n\s*\n")[0].strip()
 
 
 proc formal_usage(printable_usage: string): string =
     var pu = printable_usage.split()
-    pu.delete()
+    pu.delete(0)
     var pu0 = pu[0]
-    pu.delete()
+    pu.delete(0)
     "( " & pu.map_it(string, if it == pu0: ") | (" else: it).join(" ") & " )"
 
 
