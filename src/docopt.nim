@@ -192,7 +192,7 @@ method match(self: ChildPattern, left: seq[Pattern],
     except ValueError:
         return (false, left, collected)
     var (pos, match) = m
-    let left2 = left.sub(0, pos) & left.sub(pos+1, left.len)
+    let left2 = left[0..<pos] & left[pos+1..^1]
     var same_name: seq[Pattern] = @[]
     for a in collected:
         if a.name == self.name:

@@ -40,12 +40,6 @@ proc is_upper*(s: string): bool =
     s == upper and upper != s.to_lower()
 
 
-proc sub*[T](s: seq[T], a, b: int): seq[T] =
-    ## Items from `a` to `b` non-inclusive
-    if a < b: s[a .. <b]
-    else: @[]
-
-
 macro gen_class*(body: stmt): stmt {.immediate.} =
     ## When applied to a type block, this will generate methods
     ## that return each type's name as a string.
