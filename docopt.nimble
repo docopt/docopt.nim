@@ -6,4 +6,4 @@ description: "Command line option parser that will make you smile"
 license: "MIT"
 srcDir: "src"
 [Deps]
-requires: "nim >= 0.10.0"
+requires: "nim >= 0.10.3"

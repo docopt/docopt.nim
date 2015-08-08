@@ -3,7 +3,7 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import re, sequtils, os, tables
+import nre, options, sequtils, os, tables
 import private/util
 
 export tables
@@ -259,8 +259,9 @@ proc option_parse[T](
             argcount = 1
     if argcount > 0:
         var matched = @[""]
-        if description.find(re.re"(?i)\[default:\ (.*)\]", matched) >= 0:
-            value = val(matched[0])
+        var m = description.find(re"(?i)\[default:\ (.*)\]")
+        if m.is_some:
+            value = val(m.get.captures[0])
         else:
             value = val()
     constructor(short, long, argcount, value)
@@ -430,7 +431,7 @@ proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
 
 proc parse_pattern(source: string, options: var seq[Option]): Required =
     var tokens = token_stream(
-      source.replacef(re"([\[\]\(\)\|]|\.\.\.)", r" $1 "),
+      source.replace(re"([\[\]\(\)\|]|\.\.\.)", r" $1 "),
       new_exception(DocoptLanguageError, "")
     )
     let ret = parse_expr(tokens, options)
@@ -527,7 +528,7 @@ proc parse_argv(tokens: TokenStream, options: var seq[Option],
 
 
 proc parse_defaults(doc: string): seq[Option] =
-    var split = doc.split_inc(re"\n\ *(<\S+?>|-\S+?)")
+    var split = doc.split(re"\n\ *(<\S+?>|-\S+?)")
     result = @[]
     for i in 1 .. split.len div 2:
         var s = split[i*2-1] & split[i*2]
@@ -536,7 +537,7 @@ proc parse_defaults(doc: string): seq[Option] =
 
 
 proc printable_usage(doc: string): string =
-    var usage_split = doc.split_inc(re"([Uu][Ss][Aa][Gg][Ee]:)")
+    var usage_split = doc.split(re"(?i)(Usage:)")
     if usage_split.len < 3:
         raise new_exception(DocoptLanguageError,
             """"usage:" (case-insensitive) not found.""")
@@ -544,7 +545,7 @@ proc printable_usage(doc: string): string =
         raise new_exception(DocoptLanguageError,
             """More than one "usage:" (case-insensitive).""")
     usage_split.delete(0)
-    usage_split.join().split_inc(re"\n\s*\n")[0].strip()
+    usage_split.join().split(re"\n\s*\n")[0].strip()
 
 
 proc formal_usage(printable_usage: string): string =
@@ -662,5 +663,5 @@ proc docopt*(doc: string, argv: seq[string] = nil, help = true,
     try:
         return docopt_exc(doc, argv, help, version, options_first)
     except DocoptExit:
-        stderr.writeln((ref DocoptExit)(get_current_exception()).usage)
+        stderr.write_line((ref DocoptExit)(get_current_exception()).usage)
         quit()
