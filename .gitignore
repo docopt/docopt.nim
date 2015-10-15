@@ -12,4 +12,4 @@
 !/src/private
 !/test
 !/examples
-!/circle.yml
+!/.travis.yml
