@@ -2,16 +2,23 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import sequtils, strutils, macros
+import strutils, macros
 
 
 template any_it*(lst, pred: expr): expr =
-    ## Does `pred` return true for any of the items of an iterable?
-    var result = false
+    ## Does `pred` return true for any of the `it`s of `lst`?
+    var result {.gensym.} = false
     for it {.inject.} in lst:
         if pred:
             result = true
             break
+    result
+
+template map_it*(lst, typ, op: expr): expr =
+    ## Returns `seq[typ]` that contains `op` applied to each `it` of `lst`
+    var result {.gensym.}: seq[typ] = @[]
+    for it {.inject.} in items(lst):
+        result.add(op)
     result
 
 
@@ -44,7 +51,9 @@ macro gen_class*(body: stmt): stmt {.immediate.} =
     ## When applied to a type block, this will generate methods
     ## that return each type's name as a string.
     for typ in body[0].children:
-        body.add(parse_stmt(
-            """method class(self: $1): string = "$1"""".format(typ[0])
-        ))
+        var meth = "method class(self: $1): string"
+        if $typ[2][0][1][0] == "RootObj":
+            meth &= "{.base.}"
+        meth &= "= \"$1\""
+        body.add(parse_stmt(meth.format(typ[0])))
     body

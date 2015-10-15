@@ -2,7 +2,8 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import strutils, sequtils
+import strutils
+import private/util
 
 
 type

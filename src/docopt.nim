@@ -3,7 +3,8 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import nre, options, sequtils, os, tables
+import nre, options, os, tables
+from sequtils import deduplicate, delete, filter_it
 import private/util
 
 export tables
@@ -17,7 +18,6 @@ type
     DocoptExit* = object of Exception
         ## Exit in case user invoked program with incorrect arguments.
         usage*: string
-
 
 gen_class:
   type
@@ -88,25 +88,25 @@ type
 
 {.warning[LockLevel]: off.}
 
-method str(self: Pattern): string =
+method str(self: Pattern): string {.base.} =
     assert false
 
-method name(self: Pattern): string =
+method name(self: Pattern): string {.base.} =
     self.m_name
-method `name=`(self: Pattern, name: string) =
+method `name=`(self: Pattern, name: string) {.base.} =
     self.m_name = name
 
-method `==`(self, other: Pattern): bool =
+method `==`(self, other: Pattern): bool {.base.} =
     self.str == other.str
 
-method flat(self: Pattern, types: varargs[string]): seq[Pattern] =
+method flat(self: Pattern, types: varargs[string]): seq[Pattern] {.base.} =
     assert false
 
 method match(self: Pattern, left: seq[Pattern],
-             collected: seq[Pattern] = @[]): MatchResult =
+             collected: seq[Pattern] = @[]): MatchResult {.base.} =
     assert false
 
-method fix_identities(self: Pattern, uniq: seq[Pattern]) =
+method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base.} =
     ## Make pattern-tree tips point to same object if they are equal.
     if self.children.is_nil:
         return
@@ -117,10 +117,10 @@ method fix_identities(self: Pattern, uniq: seq[Pattern]) =
         else:
             child.fix_identities(uniq)
 
-method fix_identities(self: Pattern) =
+method fix_identities(self: Pattern) {.base.} =
     self.fix_identities(self.flat().deduplicate())
 
-method either(self: Pattern): Either =
+method either(self: Pattern): Either {.base.} =
     ## Transform pattern into an equivalent, with only top-level Either.
     # Currently the pattern will not be equivalent, but more "narrow",
     # although good enough to reason about list arguments.
@@ -150,7 +150,7 @@ method either(self: Pattern): Either =
             ret.add children
     either(ret.map_it(Pattern, required(it)))
 
-method fix_repeating_arguments(self: Pattern) =
+method fix_repeating_arguments(self: Pattern) {.base.} =
     ## Fix elements that should accumulate/increment values.
     var either: seq[seq[Pattern]] = @[]
     for child in self.either.children:
@@ -169,7 +169,7 @@ method fix_repeating_arguments(self: Pattern) =
               e.class == "Option" and Option(e).argcount == 0:
                 e.value = val(0)
 
-method fix(self: Pattern) =
+method fix(self: Pattern) {.base.} =
     self.fix_identities()
     self.fix_repeating_arguments()
 
@@ -181,7 +181,7 @@ method flat(self: ChildPattern, types: varargs[string]): seq[Pattern] =
     if types.len == 0 or self.class in types: @[Pattern(self)] else: @[]
 
 method single_match(self: ChildPattern,
-                    left: seq[Pattern]): SingleMatchResult =
+                    left: seq[Pattern]): SingleMatchResult {.base.} =
     assert false
 
 method match(self: ChildPattern, left: seq[Pattern],
@@ -258,7 +258,6 @@ proc option_parse[T](
         else:
             argcount = 1
     if argcount > 0:
-        var matched = @[""]
         var m = description.find(re"(?i)\[default:\ (.*)\]")
         if m.is_some:
             value = val(m.get.captures[0])
