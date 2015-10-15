@@ -499,7 +499,8 @@ proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
         parse_long(tokens, options)
     elif (token.starts_with "-") and token notin ["-", "--"]:
         parse_shorts(tokens, options)
-    elif (token.starts_with "<") and (token.ends_with ">") or token.is_upper():
+    elif (token.starts_with "<") and (token.ends_with ">") or
+      util.is_upper(token):
         @[Pattern(argument(tokens.move()))]
     else:
         @[Pattern(command(tokens.move()))]
