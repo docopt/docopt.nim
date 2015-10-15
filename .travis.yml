@@ -1,0 +1,38 @@
+language: c
+before_install:
+  - |
+    if [ "$TRAVIS_BRANCH" = master ]; then
+        export branch=master
+    else
+        export branch=devel
+    fi
+install:
+  - |
+    if [ ! -x nim-$branch/bin/nim ]; then
+      git clone -b $branch --depth 1 git://github.com/nim-lang/nim nim-$branch/
+      cd nim-$branch
+      git clone -b $branch --depth 1 git://github.com/nim-lang/csources csources/
+      cd csources
+      sh build.sh
+      cd ..
+      rm -rf csources
+      bin/nim c koch
+      ./koch boot -d:release
+      cd ..
+    else
+      cd nim-$branch
+      git fetch origin
+      if ! git merge FETCH_HEAD | grep "Already up-to-date"; then
+        bin/nim c koch
+        ./koch boot -d:release
+      fi
+      cd ..
+    fi
+before_script:
+  - export PATH=nim-$branch/bin:$PATH
+script:
+  - nim compile --verbosity:0 --run test/test
+cache:
+  directories:
+    - nim-master
+    - nim-devel

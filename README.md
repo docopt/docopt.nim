@@ -3,7 +3,7 @@
 
 **This is a port of [docopt][docopt.py] to [Nim][]. Visit [docopt.org][] for more information.**
 
-[![Build Status](https://circleci.com/gh/docopt/docopt.nim.png?style=shield)](https://circleci.com/gh/docopt/docopt.nim)
+[![Build Status](https://api.travis-ci.org/docopt/docopt.nim.svg?branch=master)](https://travis-ci.org/docopt/docopt.nim)
 
 ```nim
 let doc = """
