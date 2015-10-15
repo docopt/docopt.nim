@@ -36,3 +36,5 @@ cache:
   directories:
     - nim-master
     - nim-devel
+sudo: required
+dist: trusty
