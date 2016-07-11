@@ -164,7 +164,7 @@ method fix_repeating_arguments(self: Pattern) {.base.} =
                 if e.value.kind == vkNone:
                     e.value = val(@[])
                 elif e.value.kind != vkList:
-                    e.value = val(($e.value).split())
+                    e.value = val(($e.value).split_whitespace())
             if e.class == "Command" or
               e.class == "Option" and Option(e).argcount == 0:
                 e.value = val(0)
@@ -250,7 +250,7 @@ proc option_parse[T](
     var (options, p, description) = option_description.strip().partition("  ")
     discard p
     options = options.replace(",", " ").replace("=", " ")
-    for s in options.split():
+    for s in options.split_whitespace():
         if s.starts_with "--":
             long = s
         elif s.starts_with "-":
@@ -338,7 +338,7 @@ proc `@`(tokens: TokenStream): var seq[string] = tokens.tokens
 proc token_stream(source: seq[string], error: ref Exception): TokenStream =
     TokenStream(tokens: source, error: error)
 proc token_stream(source: string, error: ref Exception): TokenStream =
-    token_stream(source.split(), error)
+    token_stream(source.split_whitespace(), error)
 
 proc current(self: TokenStream): string =
     if @self.len > 0:
@@ -549,7 +549,7 @@ proc printable_usage(doc: string): string =
 
 
 proc formal_usage(printable_usage: string): string =
-    var pu = printable_usage.split()
+    var pu = printable_usage.split_whitespace()
     pu.delete(0)
     var pu0 = pu[0]
     pu.delete(0)

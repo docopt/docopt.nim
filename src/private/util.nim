@@ -57,3 +57,9 @@ macro gen_class*(body: stmt): stmt {.immediate.} =
         meth &= "= \"$1\""
         body.add(parse_stmt(meth.format(typ[0])))
     body
+
+
+# Backwards compatibility
+when not compiles("".split_whitespace()):
+    proc split_whitespace*(s: string): seq[string] =
+        s.split()

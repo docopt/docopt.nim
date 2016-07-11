@@ -8,7 +8,7 @@ proc test(doc, args, expected_s: string): bool =
     var error = ""
     try:
         try:
-            var output = docopt(doc, args.split(), quit=false)
+            var output = docopt(doc, args.split_whitespace(), quit=false)
             var expected = init_table[string, Value]()
             for k, v in expected_json:
                 expected[k] = case v.kind
