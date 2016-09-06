@@ -12,6 +12,7 @@ Naval Fate.
 Usage:
   naval_fate ship new <name>...
   naval_fate ship <name> move <x> <y> [--speed=<kn>]
+  naval_fate ship list
   naval_fate ship shoot <x> <y>
   naval_fate mine (set|remove) <x> <y> [--moored | --drifting]
   naval_fate (-h | --help)
@@ -30,16 +31,35 @@ import docopt
 
 let args = docopt(doc, version = "Naval Fate 2.0")
 
+let ships = toTable({"Enterprise": "Enterprise Aircraft Carrier"})
+
+proc move(name: string, x:float, y:float, speed:float): int =
+    echo "Move $# to ($#,$#) coordinates at speed $# knots".format(name, $x, $y, $speed)
+    result = 1
+
+proc listShips(ships: Table[string, string]): void =
+  echo "Ships available..."
+  for k, v in pairs(ships):
+    echo "<name>: '$#' for '$#'".format(k, v)    
+
 if args["move"]:
-  echo "Moving ship $# to ($#, $#) at $# kn".format(
-    args["<name>"], args["<x>"], args["<y>"], args["--speed"])
-  ships[$args["<name>"]].move(
-    parseFloat($args["<x>"]), parseFloat($args["<y>"]),
-    speed = parseFloat($args["--speed"]))
+  try:
+    var 
+        ship: string = ships[$args["<name>"]]
+    echo "Moving ship $# to ($#, $#) at $# knots".format(
+        args["<name>"], args["<x>"], args["<y>"], args["--speed"])  
+
+    discard move(ship, parseFloat($args["<x>"]), parseFloat($args["<y>"]), parseFloat($args["--speed"]))
+  except KeyError:
+    echo "'$#' Ship Not Found" % $args["<name>"]
+    listShips(ships)
 
 if args["new"]: 
   for name in @(args["<name>"]): 
     echo "Creating ship $#" % name 
+
+if args["list"]:
+    listShips(ships)
 ```
 
 The option parser is generated based on the docstring above that is passed to `docopt` function. `docopt` parses the usage pattern (`"Usage: ..."`) and option descriptions (lines starting with dash "`-`") and ensures that the program invocation matches the usage pattern; it parses options, arguments and commands based on that. The basic idea is that *a good help message has all necessary information in it to make a parser*.
