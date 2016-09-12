@@ -65,7 +65,8 @@ iterator items*(v: Value): string =
         yield val
 
 iterator pairs*(v: Value): tuple[key: int, val: string] =
-    ## Iterate over the seq of a vkList Value.
+    ## Iterate over the seq of a vkList Value, yielding ``(index, v[index])``
+    ## pairs.
     ## It is an error to use it on other kinds of Values.
     for key, val in v.list_v:
         yield (key: key, val: val)
