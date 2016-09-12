@@ -58,6 +58,18 @@ proc `[]`*(v: Value, i: int): string =
     ## It is an error to use it on other kinds of Values.
     v.list_v[i]
 
+iterator items*(v: Value): string =
+    ## Iterate over the seq of a vkList Value.
+    ## It is an error to use it on other kinds of Values.
+    for val in v.list_v:
+        yield val
+
+iterator pairs*(v: Value): tuple[key: int, val: string] =
+    ## Iterate over the seq of a vkList Value, yielding ``(index, v[index])``
+    ## pairs.
+    ## It is an error to use it on other kinds of Values.
+    for key, val in v.list_v:
+        yield (key: key, val: val)
 
 proc str(s: string): string =
     if s.is_nil: "nil"
