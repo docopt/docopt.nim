@@ -2,10 +2,10 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import strutils, macros
+import strutils, unicode, macros
 
 
-template any_it*(lst, pred: expr): expr =
+template any_it*(lst: typed, pred: untyped): bool =
     ## Does `pred` return true for any of the `it`s of `lst`?
     var result {.gensym.} = false
     for it {.inject.} in lst:
@@ -14,7 +14,7 @@ template any_it*(lst, pred: expr): expr =
             break
     result
 
-template map_it*(lst, typ, op: expr): expr =
+template map_it*(lst, typ: typed, op: untyped): untyped =
     ## Returns `seq[typ]` that contains `op` applied to each `it` of `lst`
     var result {.gensym.}: seq[typ] = @[]
     for it {.inject.} in items(lst):
@@ -43,11 +43,16 @@ proc partition*(s, sep: string): tuple[left, sep, right: string] =
 
 proc is_upper*(s: string): bool =
     ## Is the string in uppercase (and there is at least one cased character)?
-    let upper = s.to_upper()
-    s == upper and upper != s.to_lower()
+    # Backwards compatibility
+    when compiles(unicode.to_upper("")):
+        let upper = unicode.to_upper(s)
+        s == upper and upper != unicode.to_lower(s)
+    else:
+        let upper = strutils.to_upper(s)
+        s == upper and upper != strutils.to_lower(s)
 
 
-macro gen_class*(body: stmt): stmt {.immediate.} =
+macro gen_class*(body: untyped): untyped =
     ## When applied to a type block, this will generate methods
     ## that return each type's name as a string.
     for typ in body[0].children:
