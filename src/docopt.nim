@@ -568,6 +568,7 @@ proc extras(help: bool, version: string, options: seq[Pattern], doc: string) =
 
 proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
                 options_first = false): Table[string, Value] =
+    var doc = doc.replace("\r\l", "\l")
 
     var argv = (if argv.is_nil: command_line_params() else: argv)
 

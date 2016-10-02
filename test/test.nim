@@ -46,10 +46,11 @@ for each_line in (tests & "\n\n").split_lines():
         doc = ""
         line = line.substr(4)
     if in_doc:
-        doc &= line & "\n"
+        doc &= line
         if line.ends_with("\"\"\""):
-            doc = doc[0 .. doc.len-5]
+            doc = doc[0 .. doc.len-4]
             in_doc = false
+        doc &= "\n"
     elif line.starts_with("$ prog"):
         assert args == nil and expected == nil
         args = line.substr(7)
