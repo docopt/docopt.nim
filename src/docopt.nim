@@ -117,7 +117,7 @@ method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base, gcsafe.} =
         else:
             child.fix_identities(uniq)
 
-method fix_identities(self: Pattern) {.base, gcsafe.} =
+method fix_identities(self: Pattern) {.base.} =
     self.fix_identities(self.flat().deduplicate())
 
 method either(self: Pattern): Either {.base.} =
@@ -169,7 +169,7 @@ method fix_repeating_arguments(self: Pattern) {.base.} =
               e.class == "Option" and Option(e).argcount == 0:
                 e.value = val(0)
 
-method fix(self: Pattern) {.base, gcsafe.} =
+method fix(self: Pattern) {.base.} =
     self.fix_identities()
     self.fix_repeating_arguments()
 
@@ -428,7 +428,7 @@ proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
 
 proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
 
-proc parse_pattern(source: string, options: var seq[Option]): Required {.gcsafe.}=
+proc parse_pattern(source: string, options: var seq[Option]): Required =
     var tokens = token_stream(
       source.replace(re"([\[\]\(\)\|]|\.\.\.)", r" $1 "),
       new_exception(DocoptLanguageError, "")
@@ -567,7 +567,7 @@ proc extras(help: bool, version: string, options: seq[Pattern], doc: string) =
 
 
 proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
-                options_first = false): Table[string, Value] {.gcsafe.} =
+                options_first = false): Table[string, Value] =
     var doc = doc.replace("\r\l", "\l")
 
     var argv = (if argv.is_nil: command_line_params() else: argv)
