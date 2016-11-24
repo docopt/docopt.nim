@@ -106,7 +106,7 @@ method match(self: Pattern, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult {.base.} =
     assert false
 
-method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base.} =
+method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base, gcsafe.} =
     ## Make pattern-tree tips point to same object if they are equal.
     if self.children.is_nil:
         return
@@ -426,7 +426,7 @@ proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
         result.add o
 
 
-proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
+proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
 
 proc parse_pattern(source: string, options: var seq[Option]): Required =
     var tokens = token_stream(
@@ -440,7 +440,7 @@ proc parse_pattern(source: string, options: var seq[Option]): Required =
     required(ret)
 
 
-proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
+proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
 
 proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## expr ::= seq ( '|' seq )* ;
@@ -456,7 +456,7 @@ proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
 
 
 
-proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
+proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
 
 proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## seq ::= ( atom [ '...' ] )* ;
@@ -601,7 +601,7 @@ proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
 
 proc docopt*(doc: string, argv: seq[string] = nil, help = true,
              version: string = nil, options_first = false, quit = true
-            ): Table[string, Value] =
+            ): Table[string, Value] {.gcsafe.} =
     ## Parse `argv` based on command-line interface described in `doc`.
     ##
     ## `docopt` creates your command-line interface based on its
