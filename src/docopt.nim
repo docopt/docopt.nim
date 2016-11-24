@@ -106,7 +106,7 @@ method match(self: Pattern, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult {.base.} =
     assert false
 
-method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base.} =
+method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base, gcsafe.} =
     ## Make pattern-tree tips point to same object if they are equal.
     if self.children.is_nil:
         return
@@ -117,7 +117,7 @@ method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base.} =
         else:
             child.fix_identities(uniq)
 
-method fix_identities(self: Pattern) {.base.} =
+method fix_identities(self: Pattern) {.base, gcsafe.} =
     self.fix_identities(self.flat().deduplicate())
 
 method either(self: Pattern): Either {.base.} =
@@ -169,7 +169,7 @@ method fix_repeating_arguments(self: Pattern) {.base.} =
               e.class == "Option" and Option(e).argcount == 0:
                 e.value = val(0)
 
-method fix(self: Pattern) {.base.} =
+method fix(self: Pattern) {.base, gcsafe.} =
     self.fix_identities()
     self.fix_repeating_arguments()
 
@@ -426,9 +426,9 @@ proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
         result.add o
 
 
-proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
+proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
 
-proc parse_pattern(source: string, options: var seq[Option]): Required =
+proc parse_pattern(source: string, options: var seq[Option]): Required {.gcsafe.}=
     var tokens = token_stream(
       source.replace(re"([\[\]\(\)\|]|\.\.\.)", r" $1 "),
       new_exception(DocoptLanguageError, "")
@@ -440,7 +440,7 @@ proc parse_pattern(source: string, options: var seq[Option]): Required =
     required(ret)
 
 
-proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
+proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
 
 proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## expr ::= seq ( '|' seq )* ;
@@ -456,7 +456,7 @@ proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
 
 
 
-proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern]
+proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
 
 proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## seq ::= ( atom [ '...' ] )* ;
@@ -567,7 +567,7 @@ proc extras(help: bool, version: string, options: seq[Pattern], doc: string) =
 
 
 proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
-                options_first = false): Table[string, Value] =
+                options_first = false): Table[string, Value] {.gcsafe.} =
     var doc = doc.replace("\r\l", "\l")
 
     var argv = (if argv.is_nil: command_line_params() else: argv)
@@ -601,7 +601,7 @@ proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
 
 proc docopt*(doc: string, argv: seq[string] = nil, help = true,
              version: string = nil, options_first = false, quit = true
-            ): Table[string, Value] =
+            ): Table[string, Value] {.gcsafe.} =
     ## Parse `argv` based on command-line interface described in `doc`.
     ##
     ## `docopt` creates your command-line interface based on its

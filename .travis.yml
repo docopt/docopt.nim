@@ -31,7 +31,7 @@ install:
 before_script:
   - export PATH=nim-$branch/bin:$PATH
 script:
-  - nim compile --verbosity:0 --run test/test
+  - nim compile --verbosity:0 --threads:on --run test/test
 cache:
   directories:
     - nim-master
