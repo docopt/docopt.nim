@@ -88,22 +88,22 @@ type
 
 {.warning[LockLevel]: off.}
 
-method str(self: Pattern): string {.base.} =
+method str(self: Pattern): string {.base, gcsafe, noSideEffect.} =
     assert false
 
-method name(self: Pattern): string {.base.} =
+method name(self: Pattern): string {.base, gcsafe.} =
     self.m_name
-method `name=`(self: Pattern, name: string) {.base.} =
+method `name=`(self: Pattern, name: string) {.base, gcsafe.} =
     self.m_name = name
 
-method `==`(self, other: Pattern): bool {.base.} =
+method `==`(self, other: Pattern): bool {.base, gcsafe, noSideEffect.} =
     self.str == other.str
 
-method flat(self: Pattern, types: varargs[string]): seq[Pattern] {.base.} =
+method flat(self: Pattern, types: varargs[string]): seq[Pattern] {.base, gcsafe.} =
     assert false
 
 method match(self: Pattern, left: seq[Pattern],
-             collected: seq[Pattern] = @[]): MatchResult {.base.} =
+             collected: seq[Pattern] = @[]): MatchResult {.base, gcsafe.} =
     assert false
 
 method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base, gcsafe.} =
@@ -117,10 +117,10 @@ method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base, gcsafe.} =
         else:
             child.fix_identities(uniq)
 
-method fix_identities(self: Pattern) {.base.} =
+method fix_identities(self: Pattern) {.base, gcsafe.} =
     self.fix_identities(self.flat().deduplicate())
 
-method either(self: Pattern): Either {.base.} =
+method either(self: Pattern): Either {.base, gcsafe.} =
     ## Transform pattern into an equivalent, with only top-level Either.
     # Currently the pattern will not be equivalent, but more "narrow",
     # although good enough to reason about list arguments.
@@ -150,7 +150,7 @@ method either(self: Pattern): Either {.base.} =
             ret.add children
     either(ret.map_it(Pattern, required(it)))
 
-method fix_repeating_arguments(self: Pattern) {.base.} =
+method fix_repeating_arguments(self: Pattern) {.base, gcsafe.} =
     ## Fix elements that should accumulate/increment values.
     var either: seq[seq[Pattern]] = @[]
     for child in self.either.children:
@@ -169,7 +169,7 @@ method fix_repeating_arguments(self: Pattern) {.base.} =
               e.class == "Option" and Option(e).argcount == 0:
                 e.value = val(0)
 
-method fix(self: Pattern) {.base.} =
+method fix(self: Pattern) {.base, gcsafe.} =
     self.fix_identities()
     self.fix_repeating_arguments()
 
@@ -181,7 +181,7 @@ method flat(self: ChildPattern, types: varargs[string]): seq[Pattern] =
     if types.len == 0 or self.class in types: @[Pattern(self)] else: @[]
 
 method single_match(self: ChildPattern,
-                    left: seq[Pattern]): SingleMatchResult {.base.} =
+                    left: seq[Pattern]): SingleMatchResult {.base, gcsafe.} =
     assert false
 
 method match(self: ChildPattern, left: seq[Pattern],
@@ -294,7 +294,6 @@ method match(self: Optional, left: seq[Pattern],
     for pattern in self.children:
         result = pattern.match(result.left, result.collected)
     result.matched = true
-
 
 method match(self: OneOrMore, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult =

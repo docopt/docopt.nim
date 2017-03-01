@@ -98,7 +98,7 @@ proc `$`*(v: Value): string =
         v.list_v[0]
     else: v.str
 
-proc `==`*(a, b: Value): bool =
+proc `==`*(a, b: Value): bool {.gcsafe.} =
     a.kind == b.kind and a.str == b.str
 
 
