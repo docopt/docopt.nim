@@ -58,7 +58,7 @@ macro gen_class*(body: untyped): untyped =
     for typ in body[0].children:
         var meth = "method class(self: $1): string"
         if $typ[2][0][1][0] == "RootObj":
-            meth &= "{.base.}"
+            meth &= "{.base, gcsafe.}"
         meth &= "= \"$1\""
         body.add(parse_stmt(meth.format(typ[0])))
     body
