@@ -88,7 +88,7 @@ type
 
 {.warning[LockLevel]: off.}
 
-method str(self: Pattern): string {.base, gcsafe, noSideEffect.} =
+method str(self: Pattern): string {.base, gcsafe, nosideeffect.} =
     assert false
 
 method name(self: Pattern): string {.base, gcsafe.} =
@@ -96,10 +96,11 @@ method name(self: Pattern): string {.base, gcsafe.} =
 method `name=`(self: Pattern, name: string) {.base, gcsafe.} =
     self.m_name = name
 
-method `==`(self, other: Pattern): bool {.base, gcsafe, noSideEffect.} =
+method `==`(self, other: Pattern): bool {.base, gcsafe, nosideeffect.} =
     self.str == other.str
 
-method flat(self: Pattern, types: varargs[string]): seq[Pattern] {.base, gcsafe.} =
+method flat(self: Pattern,
+            types: varargs[string]): seq[Pattern] {.base, gcsafe.} =
     assert false
 
 method match(self: Pattern, left: seq[Pattern],
