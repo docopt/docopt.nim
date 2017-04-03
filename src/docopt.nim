@@ -98,12 +98,12 @@ method `name=`(self: Pattern, name: string) {.base, gcsafe.} =
 
 proc `==`(self, other: Pattern): bool =
     if self.is_nil and other.is_nil:
-      true
+        true
     elif not self.is_nil and not other.is_nil:
-      self.str == other.str
+        self.str == other.str
     else:
-      # Exactly one of the two is nil
-      false
+        # Exactly one of the two is nil
+        false
 
 method flat(self: Pattern,
             types: varargs[string]): seq[Pattern] {.base, gcsafe.} =
