@@ -25,29 +25,29 @@ gen_class:
         m_name: string
         value: Value
         children: seq[Pattern]
-    
+
     ChildPattern = ref object of Pattern
-    
+
     ParentPattern = ref object of Pattern
-    
+
     Argument = ref object of ChildPattern
-    
+
     Command = ref object of Argument
-    
+
     Option = ref object of ChildPattern
         short: string
         long: string
         argcount: int
-    
+
     Required = ref object of ParentPattern
-    
+
     Optional = ref object of ParentPattern
-    
+
     AnyOptions = ref object of Optional
         ## Marker/placeholder for [options] shortcut.
-    
+
     OneOrMore = ref object of ParentPattern
-    
+
     Either = ref object of ParentPattern
 
 
@@ -580,18 +580,18 @@ proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
 
     var docopt_exit = new_exception(DocoptExit, "")
     docopt_exit.usage = printable_usage(doc)
-    
+
     var options = parse_defaults(doc)
     var pattern = parse_pattern(formal_usage(docopt_exit.usage), options)
-    
-    var argvt = parse_argv(token_stream(argv, docopt_exit), options, 
+
+    var argvt = parse_argv(token_stream(argv, docopt_exit), options,
                            options_first)
     var pattern_options = pattern.flat("Option").deduplicate()
     for any_options in pattern.flat("AnyOptions"):
         var doc_options = parse_defaults(doc).deduplicate()
         any_options.children = doc_options.filter_it(
           it notin pattern_options).map_it(Pattern, Pattern(it))
-    
+
     extras(help, version, argvt, doc)
     pattern.fix()
     var (matched, left, collected) = pattern.match(argvt)
