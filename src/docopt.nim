@@ -96,8 +96,14 @@ method name(self: Pattern): string {.base, gcsafe.} =
 method `name=`(self: Pattern, name: string) {.base, gcsafe.} =
     self.m_name = name
 
-method `==`(self, other: Pattern): bool {.base, gcsafe, nosideeffect.} =
-    self.str == other.str
+proc `==`(self, other: Pattern): bool =
+    if self.is_nil and other.is_nil:
+      true
+    elif not self.is_nil and not other.is_nil:
+      self.str == other.str
+    else:
+      # Exactly one of the two is nil
+      false
 
 method flat(self: Pattern,
             types: varargs[string]): seq[Pattern] {.base, gcsafe.} =
