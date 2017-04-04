@@ -31,6 +31,10 @@ before_script:
   - export PATH="nim-$nim_branch/bin${PATH:+:$PATH}"
 script:
   - nim compile --verbosity:0 --run test/test
+  - |
+    for f in examples/*.nim; do
+      nim compile --verbosity:0 --hints:off "$f" || exit
+    done
 cache:
   directories:
     - nim-master
