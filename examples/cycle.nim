@@ -24,15 +24,15 @@ if not infinite:
 
 var interval = 0
 if args["--interval"]:
-    interval = round(parse_float($args["--interval"])*1000)
+    interval = to_int(parse_float($args["--interval"])*1000)
 
 while true:
     for s in @(args["<what>"]):
         echo s
-        
+
         if interval > 0:
             sleep interval
-    
+
     if not infinite:
         dec n
         if n <= 0:

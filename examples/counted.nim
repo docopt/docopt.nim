@@ -11,7 +11,7 @@ Try: counted -vvvvvvvvvv
      counted this.txt that.txt
 """
 
-import strutils
+import strutils, unicode
 import docopt
 
 
@@ -19,7 +19,7 @@ let args = docopt(doc)
 echo args
 
 if args["-v"]:
-    echo capitalize(repeat("very ", args["-v"].len - 1) & "verbose")
+    echo unicode.capitalize(repeat("very ", args["-v"].len - 1) & "verbose")
 
 for path in @(args["--path"]):
     echo read_file(path)
