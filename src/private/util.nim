@@ -38,7 +38,7 @@ proc partition*(s, sep: string): tuple[left, sep, right: string] =
     if pos < 0:
         (s, "", "")
     else:
-        (s.substr(0, <pos), s.substr(pos, <pos+sep.len), s.substr(pos+sep.len))
+        (s.substr(0, pos.pred), s.substr(pos, pos.pred+sep.len), s.substr(pos+sep.len))
 
 
 proc is_upper*(s: string): bool =

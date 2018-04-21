@@ -14,5 +14,5 @@ import docopt
 let args = docopt(doc)
 echo args
 
-for i in 0 .. <args["ODD"].len:
+for i in 0 ..< args["ODD"].len:
     echo args["ODD"][i] & " " & args["EVEN"][i]
