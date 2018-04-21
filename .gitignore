@@ -9,7 +9,7 @@
 !README*
 !LICENSE
 !/src
-!/src/private
+!/src/docopt
 !/test
 !/examples
 !/.travis.yml

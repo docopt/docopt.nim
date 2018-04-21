@@ -5,11 +5,11 @@
 
 import nre, options, os, tables
 from sequtils import deduplicate, delete, filter_it
-import private/util
+import docopt/util
 
 export tables
 
-include private/value
+include docopt/value
 
 
 type
