@@ -102,6 +102,17 @@ proc `==`*(a, b: Value): bool {.gcsafe.} =
     a.kind == b.kind and a.str == b.str
 
 
+proc isNil*(v: Value): bool =
+    case v.kind
+    of vkNone:
+        result = true
+    of vkStr:
+        result = v.str_v.isNil
+    of vkList:
+        result = v.list_v.isNil
+    else:
+        result = false
+
 proc val(): Value = Value(kind: vkNone)
 proc val(v: bool): Value = Value(kind: vkBool, bool_v: v)
 proc val(v: int): Value = Value(kind: vkInt, int_v: v)
