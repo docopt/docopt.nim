@@ -10,4 +10,5 @@ requires "nim >= 0.15.0"
 
 task test, "Test":
   exec "nim compile --verbosity:0 --run test/test"
-  exec "for f in examples/*.nim; do nim compile --verbosity:0 --hints:off \"$f\" || exit; done"
+  for f in listFiles("examples"):
+    if f[^4..^1] == ".nim": exec "nim compile --verbosity:0 --hints:off " & f
