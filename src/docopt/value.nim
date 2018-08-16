@@ -38,7 +38,7 @@ converter to_bool*(v: Value): bool =
         of vkNone: false
         of vkBool: v.bool_v
         of vkInt: v.int_v != 0
-        of vkStr: v.str_v != nil and v.str_v.len > 0
+        of vkStr: v.str_v != ""
         of vkList: not v.list_v.is_nil and v.list_v.len > 0
 
 proc len*(v: Value): int =

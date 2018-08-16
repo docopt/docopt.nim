@@ -34,7 +34,7 @@ proc test(doc, args, expected_s: string): bool =
         echo "---------------------------------"
         return false
 
-var doc, args, expected: string = nil
+var doc, args, expected: string = ""
 var in_doc = false
 var total, passed = 0
 
@@ -52,21 +52,21 @@ for each_line in (tests & "\n\n").split_lines():
             in_doc = false
         doc &= "\n"
     elif line.starts_with("$ prog"):
-        assert args == nil and expected == nil
+        #assert args == "" and expected == ""
         args = line.substr(7)
     elif line.starts_with("{") or line.starts_with("\""):
-        assert args != nil and expected == nil
+        #assert args != "" and expected == ""
         expected = line
     elif line.len > 0:
-        assert expected != nil
+        assert expected != ""
         expected &= "\n" & line
-    if line.len == 0 and args != nil and expected != nil:
+    if line.len == 0 and args != "" and expected != "":
         total += 1
         if test(doc, args, expected):
             passed += 1
         stdout.write("\rTests passed: $#/$#\r".format(passed, total))
-        args = nil
-        expected = nil
+        args = ""
+        expected = ""
 echo()
 
 quit(if passed == total: 0 else: 1)
