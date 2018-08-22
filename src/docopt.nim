@@ -113,16 +113,28 @@ method match(self: Pattern, left: seq[Pattern],
              collected: seq[Pattern] = @[]): MatchResult {.base, gcsafe.} =
     assert false
 
+proc isEmptyChild(child: Pattern): bool =
+    result = if
+      child.name.len == 0 and
+      child.value.kind == vkNone and
+      child.children.len == 0:
+        true
+      else:
+        false
+
 method fix_identities(self: Pattern, uniq: seq[Pattern]) {.base, gcsafe.} =
     ## Make pattern-tree tips point to same object if they are equal.
-    if self.children.is_nil:
+    if self.children.len == 0:
         return
     for i, child in self.children:
-        if child.children.is_nil:
-            assert child in uniq
-            self.children[i] = uniq[uniq.find(child)]
+        if not child.isEmptyChild:
+            if child.children.len == 0:
+                assert child in uniq
+                self.children[i] = uniq[uniq.find(child)]
+            else:
+                child.fix_identities(uniq)
         else:
-            child.fix_identities(uniq)
+            self.children.delete(self.children.find(child))
 
 method fix_identities(self: Pattern) {.base, gcsafe.} =
     self.fix_identities(self.flat().deduplicate())
@@ -393,7 +405,6 @@ proc parse_long(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
             o.value = (if value.kind != vkNone: value else: val(true))
     @[Pattern(o)]
 
-
 proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     ## shorts ::= '-' ( chars )* [ [ ' ' ] chars ] ;
     let token = tokens.move()
@@ -576,7 +587,7 @@ proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
                 options_first = false): Table[string, Value] =
     var doc = doc.replace("\r\l", "\l")
 
-    var argv = (if argv.is_nil: command_line_params() else: argv)
+    var argv = (if argv.len == 0: command_line_params() else: argv)
 
     var docopt_exit = new_exception(DocoptExit, "")
     docopt_exit.usage = printable_usage(doc)
