@@ -33,7 +33,7 @@ proc count*[T](s: openarray[T], it: T): int =
 proc partition*(s, sep: string): tuple[left, sep, right: string] =
     ## "a+b".partition("+") == ("a", "+", "b")
     ## "a+b".partition("-") == ("a+b", "", "")
-    assert sep != nil and sep != ""
+    assert sep != ""
     let pos = s.find(sep)
     if pos < 0:
         (s, "", "")
