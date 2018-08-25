@@ -1,4 +1,4 @@
-import json, strutils, tables
+import json, strutils, tables, options
 
 include docopt
 
@@ -34,7 +34,8 @@ proc test(doc, args, expected_s: string): bool =
         echo "---------------------------------"
         return false
 
-var doc, args, expected: string = nil
+var args, expected: options.Option[string]
+var doc: string
 var in_doc = false
 var total, passed = 0
 
@@ -52,21 +53,21 @@ for each_line in (tests & "\n\n").split_lines():
             in_doc = false
         doc &= "\n"
     elif line.starts_with("$ prog"):
-        assert args == nil and expected == nil
-        args = line.substr(7)
+        assert args.is_none and expected.is_none
+        args = some(line.substr(7))
     elif line.starts_with("{") or line.starts_with("\""):
-        assert args != nil and expected == nil
-        expected = line
+        assert args.is_some and expected.is_none
+        expected = some(line)
     elif line.len > 0:
-        assert expected != nil
-        expected &= "\n" & line
-    if line.len == 0 and args != nil and expected != nil:
+        assert expected.is_some
+        expected = some(expected.get & "\n" & line)
+    if line.len == 0 and args.is_some and expected.is_some:
         total += 1
-        if test(doc, args, expected):
+        if test(doc, args.get, expected.get):
             passed += 1
         stdout.write("\rTests passed: $#/$#\r".format(passed, total))
-        args = nil
-        expected = nil
+        args = none(string)
+        expected = none(string)
 echo()
 
 quit(if passed == total: 0 else: 1)

@@ -38,8 +38,8 @@ converter to_bool*(v: Value): bool =
         of vkNone: false
         of vkBool: v.bool_v
         of vkInt: v.int_v != 0
-        of vkStr: v.str_v != nil and v.str_v.len > 0
-        of vkList: not v.list_v.is_nil and v.list_v.len > 0
+        of vkStr: v.str_v.len > 0
+        of vkList: v.list_v.len > 0
 
 proc len*(v: Value): int =
     ## Return the integer of a vkInt Value
@@ -72,12 +72,10 @@ iterator pairs*(v: Value): tuple[key: int, val: string] =
         yield (key: key, val: val)
 
 proc str(s: string): string =
-    if s.is_nil: "nil"
-    else: "\"" & s.replace("\"", "\\\"") & "\""
+    "\"" & s.replace("\"", "\\\"") & "\""
 
 proc str[T](s: seq[T]): string =
-    if s.is_nil: "nil"
-    else: "[" & s.map_it(string, it.str).join(", ") & "]"
+    "[" & s.map_it(string, it.str).join(", ") & "]"
 
 proc str(v: Value): string =
     case v.kind
@@ -93,8 +91,7 @@ proc `$`*(v: Value): string =
     ## or a string representation of any other kind of Value.
     if v.kind == vkStr:
         v.str_v
-    elif v.kind == vkList and
-      not v.list_v.is_nil and v.list_v.len == 1:
+    elif v.kind == vkList and v.list_v.len == 1:
         v.list_v[0]
     else: v.str
 
