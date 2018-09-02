@@ -8,6 +8,6 @@ requires "nim >= 0.15.0"
 requires "regex >= 0.7.4"
 
 task test, "Test":
-  exec "nim compile --verbosity:0 --run test/test"
+  exec "nimble c --verbosity:0 -r -y test/test"
   for f in listFiles("examples"):
     if f[^4..^1] == ".nim": exec "nim compile --verbosity:0 --hints:off " & f
