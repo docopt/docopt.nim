@@ -5,6 +5,7 @@ license = "MIT"
 srcDir = "src"
 
 requires "nim >= 0.15.0"
+requires "regex >= 0.7.4"
 
 task test, "Test":
   exec "nim compile --verbosity:0 --run test/test"
