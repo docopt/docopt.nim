@@ -533,7 +533,7 @@ proc parse_argv(tokens: TokenStream, options: var seq[Option],
 
 
 proc parse_defaults(doc: string): seq[Option] =
-    var split = doc.splitIncl(re"\n\ *(<\S+?>|-\S+?)")
+    var split = doc.split_incl(re"\n\ *(<\S+?>|-\S+?)")
     result = @[]
     for i in 1 .. split.len div 2:
         var s = split[i*2-1] & split[i*2]
@@ -542,7 +542,7 @@ proc parse_defaults(doc: string): seq[Option] =
 
 
 proc printable_usage(doc: string): string =
-    var usage_split = doc.splitIncl(re"(?i)(Usage:)")
+    var usage_split = doc.split_incl(re"(?i)(Usage:)")
     if usage_split.len < 3:
         raise new_exception(DocoptLanguageError,
             """"usage:" (case-insensitive) not found.""")
@@ -550,7 +550,7 @@ proc printable_usage(doc: string): string =
         raise new_exception(DocoptLanguageError,
             """More than one "usage:" (case-insensitive).""")
     usage_split.delete(0)
-    usage_split.join().splitIncl(re"\n\s*\n")[0].strip()
+    usage_split.join().split_incl(re"\n\s*\n")[0].strip()
 
 
 proc formal_usage(printable_usage: string): string =
