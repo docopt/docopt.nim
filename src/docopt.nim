@@ -264,9 +264,9 @@ proc option_parse[T](
         else:
             argcount = 1
     if argcount > 0:
-        var m = description.find(re"(?i)\[default:\ (.*)\]")
-        if m.is_some:
-            let bounds = m.get.group(0)[0]
+        var m: RegexMatch
+        if description.find(re"(?i)\[default:\ (.*)\]", m):
+            let bounds = m.group(0)[0]
             value = val(description.substr(bounds.a, bounds.b))
         else:
             value = val()
