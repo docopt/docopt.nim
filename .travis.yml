@@ -18,23 +18,22 @@ install:
       rm -rf csources
       bin/nim c koch
       ./koch boot -d:release
+      ./koch nimble
     else
       cd nim-$nim_branch
       git fetch origin
       if ! git merge FETCH_HEAD | grep "Already up-to-date"; then
         bin/nim c koch
         ./koch boot -d:release
+        ./koch nimble
       fi
     fi
     cd ..
 before_script:
   - export PATH="nim-$nim_branch/bin${PATH:+:$PATH}"
+  - export NIM_LIB_PREFIX="$(pwd)/nim-$nim_branch"
 script:
-  - nim compile --verbosity:0 --run test/test
-  - |
-    for f in examples/*.nim; do
-      nim compile --verbosity:0 --hints:off "$f" || exit
-    done
+  - nimble test
 cache:
   directories:
     - nim-master

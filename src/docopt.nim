@@ -3,7 +3,7 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import nre, options, os, tables
+import regex, options, os, tables
 from sequtils import deduplicate, delete, filter_it
 import docopt/util
 
@@ -264,9 +264,10 @@ proc option_parse[T](
         else:
             argcount = 1
     if argcount > 0:
-        var m = description.find(re"(?i)\[default:\ (.*)\]")
-        if m.is_some:
-            value = val(m.get.captures[0])
+        var m: RegexMatch
+        if description.find(re"(?i)\[default:\ (.*)\]", m):
+            let bounds = m.group(0)[0]
+            value = val(description.substr(bounds.a, bounds.b))
         else:
             value = val()
     constructor(short, long, argcount, value)
@@ -532,7 +533,7 @@ proc parse_argv(tokens: TokenStream, options: var seq[Option],
 
 
 proc parse_defaults(doc: string): seq[Option] =
-    var split = doc.split(re"\n\ *(<\S+?>|-\S+?)")
+    var split = doc.split_incl(re"\n\ *(<\S+?>|-\S+?)")
     result = @[]
     for i in 1 .. split.len div 2:
         var s = split[i*2-1] & split[i*2]
@@ -541,7 +542,7 @@ proc parse_defaults(doc: string): seq[Option] =
 
 
 proc printable_usage(doc: string): string =
-    var usage_split = doc.split(re"(?i)(Usage:)")
+    var usage_split = doc.split_incl(re"(?i)(Usage:)")
     if usage_split.len < 3:
         raise new_exception(DocoptLanguageError,
             """"usage:" (case-insensitive) not found.""")
@@ -549,7 +550,7 @@ proc printable_usage(doc: string): string =
         raise new_exception(DocoptLanguageError,
             """More than one "usage:" (case-insensitive).""")
     usage_split.delete(0)
-    usage_split.join().split(re"\n\s*\n")[0].strip()
+    usage_split.join().split_incl(re"\n\s*\n")[0].strip()
 
 
 proc formal_usage(printable_usage: string): string =
