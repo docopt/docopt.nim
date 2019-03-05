@@ -46,12 +46,17 @@ proc len*(v: Value): int =
     ## or the length of the seq of a vkList value.
     ## It is an error to use it on other kinds of Values.
     if v.kind == vkInt: v.int_v
+    elif v.kind == vkNone: 0
     else: v.list_v.len
 
 proc `@`*(v: Value): seq[string] =
-    ## Return the seq of a vkList Value.
+    ## Return the seq of a vkList Value or an empty seq for vkNone.
     ## It is an error to use it on other kinds of Values.
-    v.list_v
+    case v.kind
+    of vkNone:
+      return
+    else:
+      return v.list_v
 
 proc `[]`*(v: Value, i: int): string =
     ## Return the i-th item of the seq of a vkList Value.
@@ -61,14 +66,14 @@ proc `[]`*(v: Value, i: int): string =
 iterator items*(v: Value): string =
     ## Iterate over the seq of a vkList Value.
     ## It is an error to use it on other kinds of Values.
-    for val in v.list_v:
+    for val in @(v):
         yield val
 
 iterator pairs*(v: Value): tuple[key: int, val: string] =
     ## Iterate over the seq of a vkList Value, yielding ``(index, v[index])``
     ## pairs.
     ## It is an error to use it on other kinds of Values.
-    for key, val in v.list_v:
+    for key, val in @(v):
         yield (key: key, val: val)
 
 proc str(s: string): string =
