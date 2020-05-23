@@ -120,7 +120,7 @@ Note that this is not how the values are actually stored, because a `Table` can 
 
 Note that you can use any kind of value in a boolean context and convert any value to `string`.
 
-Look [in the source code](src/private/value.nim) to find out more about these conversions.
+Look [in the source code](src/docopt/value.nim) to find out more about these conversions.
 
 
 Examples
