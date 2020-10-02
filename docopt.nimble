@@ -1,10 +1,10 @@
-version = "0.6.8"
+version = "0.7.0"
 author = "Oleh Prypin"
 description = "Command line option parser that will make you smile"
 license = "MIT"
 srcDir = "src"
 
-requires "nim >= 0.15.0"
+requires "nim >= 0.20.0"
 requires "regex >= 0.11.1"
 
 task test, "Test":

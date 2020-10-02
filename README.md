@@ -120,6 +120,54 @@ Note that you can use any kind of value in a boolean context and convert any val
 
 Look [in the source code](src/docopt/value.nim) to find out more about these conversions.
 
+As of version 0.7.0 docopt also includes a dispatch mechanism for automatically
+running procedures and converting arguments. This works by a simple macro that
+inspects the signature of the given procedure and ensures that the parameters
+exists in the list of arguments. They will then be converted to the correct type
+and the procedure would be called. A simple example would be something like
+this:
+
+```nim
+let doc = """
+Naval Fate Lite
+
+Usage:
+  naval_fate ship new <name>...
+  naval_fate ship <name> move <x> <y> [--speed=<kn>]
+  naval_fate (-h | --help)
+  naval_fate --version
+
+Options:
+  -h --help     Show this screen.
+  --version     Show version.
+  --speed=<kn>  Speed in knots [default: 10].
+"""
+
+import strutils
+import docopt
+import docopt/dispatch
+import sequtils
+
+let args = docopt(doc, version = "Naval Fate Lite")
+
+# Define procedures with parameters named the same as the arguments
+proc newShip(name: seq[string]) =
+  for ship in name:
+    echo "Creating ship $#" % ship
+
+proc moveShip(name: string, x, y: int, speed: int) =
+  echo "Moving ship $# to ($#, $#) at $# kn".format(
+    name, x, y, speed)
+
+if [
+  args.dispatchProc(newShip, "ship", "new"), # Runs newShip when "ship" and "new" is set
+  args.dispatchProc(moveShip, "ship", "move"), # Runs newShip when "ship" and "move" is set
+].anyIt(it == true): # If any of the above returned true
+  echo "Ran something"
+else:
+  echo doc
+```
+
 
 Examples
 --------
