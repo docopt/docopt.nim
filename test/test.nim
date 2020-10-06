@@ -8,16 +8,16 @@ proc test(doc, args, expected_s: string): bool =
     var error = ""
     try:
         try:
-            var output = docopt(doc, args.split_whitespace(), quit=false)
+            var output = docopt(doc, args.split_whitespace(), quit = false)
             var expected = init_table[string, Value]()
             for k, v in expected_json:
                 expected[k] = case v.kind
-                  of JNull: val()
-                  of JString: val(v.str)
-                  of JInt: val(int(v.num))
-                  of JBool: val(v.bval)
-                  of JArray: val(v.elems.map_it(string, it.str))
-                  else: val()
+                    of JNull: val()
+                    of JString: val(v.str)
+                    of JInt: val(int(v.num))
+                    of JBool: val(v.bval)
+                    of JArray: val(v.elems.map_it(string, it.str))
+                    else: val()
             error = "!= " & $output
             assert expected == output
         except DocoptExit:

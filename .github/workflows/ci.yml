@@ -19,3 +19,5 @@ jobs:
         run: nimble install -d -y
       - name: Run tests
         run: nimble test -y
+      - name: Check formatting
+        run: nimpretty --indent:4 **/*.nim && git diff --exit-code
