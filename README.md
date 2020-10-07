@@ -144,6 +144,6 @@ This library has no dependencies outside the standard library. An impure [`re`][
 [docopt.py]: https://github.com/docopt/docopt
 [docopt.py examples]: https://github.com/docopt/docopt/tree/master/examples
 [nim]: http://nim-lang.org/
-[re]: http://nim-lang.org/re.html
-[table]: http://nim-lang.org/tables.html#Table
-[quit]: http://nim-lang.org/system.html#quit
+[re]: https://nim-lang.org/docs/re.html
+[table]: https://nim-lang.org/docs/tables.html
+[quit]: https://nim-lang.org/docs/system.html#quit%2Cint
