@@ -15,4 +15,4 @@ let args = docopt(doc)
 echo args
 
 for i in 0 ..< args["ODD"].len:
-    echo args["ODD"][i] & " " & args["EVEN"][i]
+  echo args["ODD"][i] & " " & args["EVEN"][i]

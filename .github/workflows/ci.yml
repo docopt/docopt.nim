@@ -20,4 +20,6 @@ jobs:
       - name: Run tests
         run: nimble test -y
       - name: Check formatting
-        run: nimpretty --indent:4 **/*.nim && git diff --exit-code
+        run: |
+          find . -name '*.nim' -exec nimpretty --indent:2 {} \;
+          git diff --exit-code

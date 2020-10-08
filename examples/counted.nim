@@ -19,7 +19,7 @@ let args = docopt(doc)
 echo args
 
 if args["-v"]:
-    echo unicode.capitalize(repeat("very ", args["-v"].len - 1) & "verbose")
+  echo unicode.capitalize(repeat("very ", args["-v"].len - 1) & "verbose")
 
 for path in @(args["--path"]):
-    echo read_file(path)
+  echo read_file(path)
