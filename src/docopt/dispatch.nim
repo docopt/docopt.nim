@@ -41,7 +41,7 @@ macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: var
     setArgs = nnkBracket.newTree()
     findArgs = newStmtList()
     call = nnkCall.newTree(procImpl[0])
-    i = 0CustomInt
+    i = 0
   for arg in procImpl[3][1..^1]:
     argVariables.add arg
     for subArg in arg[0..^3]:

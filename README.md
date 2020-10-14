@@ -159,10 +159,8 @@ proc moveShip(name: string, x, y: int, speed: int) =
   echo "Moving ship $# to ($#, $#) at $# kn".format(
     name, x, y, speed)
 
-if [
-  args.dispatchProc(newShip, "ship", "new"), # Runs newShip when "ship" and "new" is set
-  args.dispatchProc(moveShip, "ship", "move"), # Runs newShip when "ship" and "move" is set
-].anyIt(it == true): # If any of the above returned true
+if args.dispatchProc(newShip, "ship", "new") or # Runs newShip when "ship" and "new" is set
+  args.dispatchProc(moveShip, "ship", "move"): # Runs newShip when "ship" and "move" is set
   echo "Ran something"
 else:
   echo doc
