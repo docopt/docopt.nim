@@ -122,10 +122,12 @@ Look [in the source code](src/docopt/value.nim) to find out more about these con
 
 As of version 0.7.0 docopt also includes a dispatch mechanism for automatically
 running procedures and converting arguments. This works by a simple macro that
-inspects the signature of the given procedure and ensures that the parameters
-exists in the list of arguments. They will then be converted to the correct type
-and the procedure would be called. A simple example would be something like
-this:
+inspects the signature of the given procedure. The macro then returns code that
+will inspect the parsed arguments and if a list of supplied conditions are
+true the matched arguments from the signature will be extracted from the
+arguments and converted to the correct type before the procedure is called. A
+simple example would be something like this (a longer example can be found in
+the examples folder):
 
 ```nim
 let doc = """
@@ -159,8 +161,8 @@ proc moveShip(name: string, x, y: int, speed: int) =
   echo "Moving ship $# to ($#, $#) at $# kn".format(
     name, x, y, speed)
 
-if args.dispatchProc(newShip, "ship", "new") or # Runs newShip when "ship" and "new" is set
-  args.dispatchProc(moveShip, "ship", "move"): # Runs newShip when "ship" and "move" is set
+if args.dispatchProc(newShip, "ship", "new") or # Runs newShip if "ship" and "new" is set
+  args.dispatchProc(moveShip, "ship", "move"): # Runs newShip if "ship" and "move" is set
   echo "Ran something"
 else:
   echo doc

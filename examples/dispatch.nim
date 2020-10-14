@@ -53,7 +53,10 @@ proc setMine(x, y: int, moored, drifting: bool) =
 proc removeMine(x, y: int) =
   echo "Removing mine at ($#, $#)".format(x, y)
 
-# This procedure is named the same as an argument so can be used directly
+# This procedure is named the same as an argument so it can be passed directly
+# to `dispatchProc` without supplying a list of arguments to match. When no
+# list is supplied it will simply check for an argument named the same as the
+# procedure.
 proc mine(x, y: int, moored, remove: bool) =
   if remove:
     echo "Removing mine at ($#, $#)".format(x, y)
