@@ -1,4 +1,12 @@
-import docopt, macros, strutils, sequtils
+import docopt, macros, strutils, sequtils, typetraits
+
+macro runUserImplemented(x: typed, fallback: untyped): untyped =
+  let typ = x.getType
+  if typ.kind == nnkBracketExpr and typ[0].kind == nnkSym and $typ[0] == "typeDesc":
+    let call = newIdentNode("to" & $typ[1])
+    result = nnkCall.newTree(call, newIdentNode("v"))
+  else:
+    result = fallback
 
 proc to[T](v: Value): T =
   when T is SomeInteger:
@@ -9,6 +17,9 @@ proc to[T](v: Value): T =
     $v
   elif T is seq:
     @v
+  else:
+    runUserImplemented(T):
+      {.error: "Invalid type \"" & $T & "\" in signature of dispatched procedure".}
 
 proc discardable(b: bool): bool {.discardable.} = b
 
@@ -30,7 +41,7 @@ macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: var
     setArgs = nnkBracket.newTree()
     findArgs = newStmtList()
     call = nnkCall.newTree(procImpl[0])
-    i = 0
+    i = 0CustomInt
   for arg in procImpl[3][1..^1]:
     argVariables.add arg
     for subArg in arg[0..^3]:
@@ -56,4 +67,3 @@ macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: var
       discardable true
     else:
       discardable false
-  echo result.repr

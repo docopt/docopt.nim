@@ -19,8 +19,16 @@ Options:
 
 import strutils
 import docopt
-import docopt/dispatch
 import sequtils
+
+type CustomInt* = distinct int
+
+# You can name a proc `to<type name>` in order to have the dispatcher be able
+# to marshall your custom types.
+proc toCustomInt*(v: Value): CustomInt =
+  CustomInt(parseInt($v))
+
+import docopt/dispatch
 
 let args = docopt(doc, version = "Naval Fate 2.0")
 
@@ -33,9 +41,10 @@ proc moveShip(name: string, x, y: int, speed: int) =
   echo "Moving ship $# to ($#, $#) at $# kn".format(
     name, x, y, speed)
 
-proc shootShip(x, y: int) =
-  echo "Shooting ship at ($#, $#)".format(x, y)
+proc shootShip(x, y: CustomInt) = # This works because we have `toCustomInt` defined above
+  echo "Shooting ship at ($#, $#)".format(x.int, y.int)
 
+# These procedures are not used below, but could be used similar to those above
 proc setMine(x, y: int, moored, drifting: bool) =
   echo "Setting $# mine at ($#, $#)".format(
     (if moored: "moored" elif drifting: "drifting" else: ""),
@@ -44,7 +53,7 @@ proc setMine(x, y: int, moored, drifting: bool) =
 proc removeMine(x, y: int) =
   echo "Removing mine at ($#, $#)".format(x, y)
 
-# This procedure is also named the same as an argument so can be used directly
+# This procedure is named the same as an argument so can be used directly
 proc mine(x, y: int, moored, remove: bool) =
   if remove:
     echo "Removing mine at ($#, $#)".format(x, y)
@@ -53,12 +62,10 @@ proc mine(x, y: int, moored, remove: bool) =
       (if moored: "moored" else: "drifting"),
       x, y)
 
-if [
-  args.dispatchProc(newShip, "ship", "new"), # Runs newShip when "ship" and "new" is set
-  args.dispatchProc(moveShip, "ship", "move"), # Runs newShip when "ship" and "move" is set
-  args.dispatchProc(shootShip, "ship", "shoot"), # Runs newShip when "ship" and "shoot" is set
-  args.dispatchProc(mine) # Runs mine when "mine" is set
-].anyIt(it == true): # If any of the above returned true
+if args.dispatchProc(newShip, "ship", "new") or # Runs newShip when "ship" and "new" is set
+  args.dispatchProc(moveShip, "ship", "move") or # Runs newShip when "ship" and "move" is set
+  args.dispatchProc(shootShip, "ship", "shoot") or # Runs newShip when "ship" and "shoot" is set
+  args.dispatchProc(mine): # Runs mine when "mine" is set
   echo "Ran something"
 else:
   echo doc
