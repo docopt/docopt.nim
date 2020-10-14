@@ -4,7 +4,11 @@ macro runUserImplemented(x: typed, fallback: untyped): untyped =
   let typ = x.getType
   if typ.kind == nnkBracketExpr and typ[0].kind == nnkSym and $typ[0] == "typeDesc":
     let call = newIdentNode("to" & $typ[1])
-    result = nnkCall.newTree(call, newIdentNode("v"))
+    result = quote do:
+      when declared(`call`):
+        `call`(v)
+      else:
+        `fallback`
   else:
     result = fallback
 
