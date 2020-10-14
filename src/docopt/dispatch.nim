@@ -1,9 +1,9 @@
 import docopt, macros, strutils, sequtils, typetraits
 
 macro runUserImplemented(x: typed, fallback: untyped): untyped =
-  ## This macro checks takes a type from a generic and checks if there exists
-  ## a callable named `to<type name>`. If such a callable exists it will call
-  ## it. Otherwise it will output an error saying that the type is invalid.
+  ## This macro takes a type from a generic and checks if there exists a
+  ## callable named `to<type name>`. If such a callable exists it will call it.
+  ## Otherwise it will output an error saying that the type is invalid.
   let typ = x.getType
   if typ.kind == nnkBracketExpr and typ[0].kind == nnkSym and $typ[0] == "typeDesc":
     let call = newIdentNode("to" & $typ[1])
@@ -39,7 +39,7 @@ macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: var
   ## if all conditions are true then arguments from `args` will be unpacked
   ## to match the types given in the signature of `procedure` and `procedure`
   ## will be called. If no conditions are parsed the name of `procedure` will
-  ## be used as the the condition.o
+  ## be used as the the condition.
   # Generate a sequence of `and` statements with the conditions equaling true
   var check = newLit(true)
   for condition in conditions:
@@ -51,7 +51,7 @@ macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: var
     argIt = newIdentNode("argIt")
     setArguments = newIdentNode("setArguments")
 
-  # If no conditions are passed, use the procedure name as the only condition
+  # If no conditions are passed, use the procedure name as the only condition.
   if conditions.len == 0:
     let name = procImpl[0].strVal
     check = quote do:
@@ -62,7 +62,7 @@ macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: var
   # setArgs: A set of which arguments have been found in the parsed list
   # findArgs: The body of a loop that assignes the variables in `argVariables`
   #   and sets the field in `setArgs` based on the parsed arguments in `args`
-  # call: The procedure call with all the values from the var section
+  # call: The procedure call with all the values from the var section.
   var
     argVariables = nnkVarSection.newTree()
     setArgs = nnkBracket.newTree()
