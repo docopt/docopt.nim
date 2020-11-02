@@ -44,7 +44,8 @@ proc deSym(x: NimNode): NimNode =
     elif result[i].len != 0:
       result[i] = deSym(result[i])
 
-macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: varargs[string]): untyped =
+macro dispatchProc*(args: Table[string, Value], procedure: proc,
+    conditions: varargs[string]): untyped =
   ## Generates code by examining the signature of `procedure`. It looks for
   ## boolean values matching `conditions` in the parsed arguments in `args` and
   ## if all conditions are true then arguments from `args` will be unpacked
