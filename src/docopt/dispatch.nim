@@ -33,6 +33,17 @@ proc discardable(b: bool): bool {.discardable.} =
   ## Wrapper proc to allow the boolean result of `dispatchProc` to be discarded
   b
 
+proc deSym(x: NimNode): NimNode =
+  ## Procedure to strip symbols from a tree, replacing them with idents. This
+  ## is needed to be able to snip the arguments from a procedure implementation
+  ## and place them as arguments in Nim 1.4.0
+  result = x
+  for i in 0..<result.len:
+    if result[i].kind == nnkSym:
+      result[i] = newIdentNode($result[i])
+    elif result[i].len != 0:
+      result[i] = deSym(result[i])
+
 macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: varargs[string]): untyped =
   ## Generates code by examining the signature of `procedure`. It looks for
   ## boolean values matching `conditions` in the parsed arguments in `args` and
@@ -47,7 +58,7 @@ macro dispatchProc*(args: Table[string, Value], procedure: proc, conditions: var
       `args`[`condition`] == true)
 
   let
-    procImpl = procedure.getImpl
+    procImpl = procedure.getImpl.deSym
     argIt = newIdentNode("argIt")
     setArguments = newIdentNode("setArguments")
 
