@@ -14,7 +14,7 @@ jobs:
       - name: Download source
         uses: actions/checkout@v2
       - name: Install Nim
-        uses: jiro4989/setup-nim-action@b4d6fa1d97faa8d43f5748edc736f8935d78e764
+        uses: jiro4989/setup-nim-action@5bbc93d889ba575ed95cde254faa197193690456
       - name: Install dependencies
         run: nimble install -d -y
       - name: Run tests
