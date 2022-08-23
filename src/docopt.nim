@@ -431,7 +431,8 @@ proc parse_shorts(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
     result.add o
 
 
-proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
+proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[
+    Pattern] {.gcsafe.}
 
 proc parse_pattern(source: string, options: var seq[Option]): Required =
   var tokens = token_stream(
@@ -445,7 +446,8 @@ proc parse_pattern(source: string, options: var seq[Option]): Required =
   required(ret)
 
 
-proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
+proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[
+    Pattern] {.gcsafe.}
 
 proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
   ## expr ::= seq ( '|' seq )* ;
@@ -461,7 +463,8 @@ proc parse_expr(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
 
 
 
-proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[Pattern] {.gcsafe.}
+proc parse_atom(tokens: TokenStream, options: var seq[Option]): seq[
+    Pattern] {.gcsafe.}
 
 proc parse_seq(tokens: TokenStream, options: var seq[Option]): seq[Pattern] =
   ## seq ::= ( atom [ '...' ] )* ;
