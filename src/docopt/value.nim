@@ -1,10 +1,8 @@
 # Copyright (C) 2015 Oleh Prypin <blaxpirit@gmail.com>
 # Licensed under terms of MIT license (see LICENSE)
 
-
-import strutils
+import std/[strutils]
 import util
-
 
 type
   ValueKind* = enum
