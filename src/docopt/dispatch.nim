@@ -1,4 +1,9 @@
-import docopt, macros, strutils, sequtils, typetraits
+# Copyright (C) 2015 Oleh Prypin <blaxpirit@gmail.com>
+# Licensed under terms of MIT license (see LICENSE)
+
+from sequtils import allIt
+import std/[strbasics, strutils, macros, typetraits]
+import docopt
 
 macro runUserImplemented(x: typed, fallback: untyped): untyped =
   ## This macro takes a type from a generic and checks if there exists a
