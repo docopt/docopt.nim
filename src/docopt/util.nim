@@ -1,9 +1,7 @@
 # Copyright (C) 2015 Oleh Prypin <blaxpirit@gmail.com>
 # Licensed under terms of MIT license (see LICENSE)
 
-
-import strutils, unicode, macros
-
+import std/[strutils, unicode, macros]
 
 template any_it*(lst: typed, pred: untyped): bool =
   ## Does `pred` return true for any of the `it`s of `lst`?
