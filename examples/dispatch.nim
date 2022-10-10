@@ -17,9 +17,8 @@ Options:
   --drifting    Drifting mine.
 """
 
-import strutils
+import std/[strutils, sequtils]
 import docopt
-import sequtils
 
 type CustomInt* = distinct int
 

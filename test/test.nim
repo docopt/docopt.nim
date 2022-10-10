@@ -1,4 +1,4 @@
-import json, strutils, tables, options
+import std/[json, strutils, tables, options]
 
 include docopt
 
@@ -25,7 +25,7 @@ proc test(doc, args, expected_s: string): bool =
       assert expected_json.kind == JString and
         expected_json.str == "user-error"
     return true
-  except AssertionError:
+  except AssertionDefect:
     echo "-------- TEST NOT PASSED --------"
     echo doc
     echo "$ prog ", args, " "

@@ -2,9 +2,9 @@
 # Copyright (C) 2015 Oleh Prypin <blaxpirit@gmail.com>
 # Licensed under terms of MIT license (see LICENSE)
 
-
-import regex, options, os, tables
-from sequtils import deduplicate, delete, filter_it
+from std/sequtils import deduplicate, delete, filter_it
+import std/[options, os, tables]
+import regex
 import docopt/util
 
 export tables
@@ -13,9 +13,9 @@ include docopt/value
 
 
 type
-  DocoptLanguageError* = object of Exception
+  DocoptLanguageError* = object of CatchableError
     ## Error in construction of usage-message by developer.
-  DocoptExit* = object of Exception
+  DocoptExit* = object of CatchableError
     ## Exit in case user invoked program with incorrect arguments.
     usage*: string
 
@@ -142,7 +142,7 @@ method either(self: Pattern): Either {.base, gcsafe.} =
       for i, c in children:
         if c.class in parents:
           child = c
-          children.delete(i, i)
+          children.delete(i..i)
           break
       assert child != nil
       if child.class == "Either":

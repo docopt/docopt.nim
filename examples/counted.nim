@@ -11,7 +11,7 @@ Try: counted -vvvvvvvvvv
      counted this.txt that.txt
 """
 
-import strutils, unicode
+import std/[strutils, unicode]
 import docopt
 
 
