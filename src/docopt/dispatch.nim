@@ -1,4 +1,5 @@
-import docopt, macros, strutils, sequtils, typetraits
+import std/[macros, strutils, sequtils, typetraits]
+import docopt
 
 macro runUserImplemented(x: typed, fallback: untyped): untyped =
   ## This macro takes a type from a generic and checks if there exists a

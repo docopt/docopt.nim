@@ -2,7 +2,7 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import strutils
+import std/strutils
 import util
 
 

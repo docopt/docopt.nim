@@ -1,4 +1,4 @@
-import json, strutils, tables, options
+import std/[json, strutils, tables, options]
 
 include docopt
 

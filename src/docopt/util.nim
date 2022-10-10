@@ -2,7 +2,7 @@
 # Licensed under terms of MIT license (see LICENSE)
 
 
-import strutils, unicode, macros
+import std/[strutils, unicode, macros]
 
 
 template any_it*(lst: typed, pred: untyped): bool =
