@@ -13,9 +13,9 @@ include docopt/value
 
 
 type
-  DocoptLanguageError* = object of Exception
+  DocoptLanguageError* = object of Defect
     ## Error in construction of usage-message by developer.
-  DocoptExit* = object of Exception
+  DocoptExit* = object of Defect
     ## Exit in case user invoked program with incorrect arguments.
     usage*: string
 
@@ -142,7 +142,7 @@ method either(self: Pattern): Either {.base, gcsafe.} =
       for i, c in children:
         if c.class in parents:
           child = c
-          children.delete(i, i)
+          children.delete(i..i)
           break
       assert child != nil
       if child.class == "Either":

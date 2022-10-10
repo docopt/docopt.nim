@@ -10,7 +10,7 @@ Options:
   --interval <seconds>     wait after every line of output
 """
 
-import strutils, os, math
+import strutils, os
 import docopt
 
 
