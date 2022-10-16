@@ -248,7 +248,8 @@ method single_match(self: Command, left: seq[Pattern]): SingleMatchResult =
 
 
 proc option_parse[T](
-  constructor: proc(short, long: string; argcount: int; value: Value): T {.gcsafe.},
+  constructor: proc(short, long: string; argcount: int;
+      value: Value): T {.gcsafe.},
   option_description: string): T =
   var short, long: string = ""
   var argcount = 0
