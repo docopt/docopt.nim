@@ -10,4 +10,4 @@ requires "regex >= 0.11.1"
 task test, "Test":
   exec "nimble c --verbosity:0 -r -y test/test"
   for f in listFiles("examples"):
-    if f[^4..^1] == ".nim": exec "nim compile --verbosity:0 --hints:off " & f
+    if f[^4..^1] == ".nim": exec "nimble compile --verbosity:0 --hints:off " & f
