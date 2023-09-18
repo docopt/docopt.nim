@@ -576,7 +576,7 @@ proc extras(help: bool, version: string, options: seq[Pattern], doc: string) =
 
 
 proc docopt_exc(doc: string, argv: seq[string], help: bool, version: string,
-                options_first = false): Table[string, Value] =
+                options_first = false): Table[string, Value] {.gcsafe.} =
   var doc = doc.replace("\r\l", "\l")
 
   var docopt_exit = new_exception(DocoptExit, "")
