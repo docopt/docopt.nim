@@ -1,4 +1,4 @@
-version = "0.7.0"
+version = "0.7.1"
 author = "Oleh Prypin"
 description = "Command line option parser that will make you smile"
 license = "MIT"
